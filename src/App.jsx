@@ -137,6 +137,9 @@ function App() {
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
 
+  // Trạng thái Tab SPA của Phòng (Tạo phòng hoặc Tham gia)
+  const [activeRoomTab, setActiveRoomTab] = useState('create'); // 'create' | 'join'
+
   // --- STATE BANNER TRÍCH DẪN NGẪU NHIÊN ---
   const [activeQuote, setActiveQuote] = useState(COMFORT_QUOTES[0]);
 
@@ -606,6 +609,7 @@ function App() {
       navigateTo('room');
     } else {
       // Đưa thông tin vào form để kết nối lại dễ dàng
+      setActiveRoomTab('join');
       setJoinRoomId(room.id);
       setJoinRoomPass(room.password);
       setJoinUserName(currentUser ? currentUser.name : '');
@@ -956,7 +960,7 @@ function App() {
                   "Hiểu Nhau" là không gian an toàn, riêng tư giúp phụ huynh và con cái xích lại gần nhau hơn. Thông qua quy trình thiết kế câu hỏi chung và làm bài kiểm tra hai bên, AI thấu cảm sẽ đưa ra những lời khuyên nhẹ nhàng, không chỉ trích, hàn gắn tình cảm gia đình.
                 </p>
                 <div className="hero-btn-group">
-                  <a className="btn btn-primary" href="#create-room-section">
+                  <a className="btn btn-primary" href="#create-room-section" onClick={() => setActiveRoomTab('create')}>
                     Bắt Đầu Ngay ➜
                   </a>
                   <button className="btn btn-secondary" onClick={() => navigateTo('mechanism')}>
@@ -997,77 +1001,136 @@ function App() {
                 </div>
               )}
 
-              <div className="dashboard-grid">
+              {/* SPA Tab Selector: 2 beautiful custom capsule buttons */}
+              <div className="room-tab-selector" style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'center',
+                padding: '4px',
+                backgroundColor: 'rgba(140, 98, 57, 0.08)',
+                borderRadius: '16px',
+                maxWidth: '400px',
+                margin: '0 auto 32px auto',
+                border: '1.5px solid var(--border)'
+              }}>
+                <button
+                  type="button"
+                  className={`btn ${activeRoomTab === 'create' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setActiveRoomTab('create')}
+                  style={{
+                    flex: 1,
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.3s ease',
+                    border: 'none',
+                    backgroundColor: activeRoomTab === 'create' ? 'var(--primary)' : 'transparent',
+                    color: activeRoomTab === 'create' ? 'white' : 'var(--text)'
+                  }}
+                >
+                  🏡 Tạo Phòng Mới
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${activeRoomTab === 'join' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setActiveRoomTab('join')}
+                  style={{
+                    flex: 1,
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    fontWeight: '700',
+                    fontSize: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.3s ease',
+                    border: 'none',
+                    backgroundColor: activeRoomTab === 'join' ? 'var(--primary)' : 'transparent',
+                    color: activeRoomTab === 'join' ? 'white' : 'var(--text)'
+                  }}
+                >
+                  🔑 Tham Gia Phòng
+                </button>
+              </div>
+
+              {/* Centered Mobile Capsule View */}
+              <div style={{ maxWidth: '480px', margin: '0 auto' }} className="animate-slide">
                 {/* 1. TẠO PHÒNG MỚI */}
-                <div className="card">
-                  <div className="card-icon" style={{ backgroundColor: 'rgba(224, 122, 95, 0.12)', color: 'var(--primary)' }}>🏠</div>
-                  <h3 className="card-title">Tạo Phòng Kết Nối Mới</h3>
-                  <p className="card-desc" style={{ marginBottom: '20px' }}>
-                    Khởi tạo phòng thấu hiểu riêng tư. Bạn sẽ là người đầu tiên soạn thảo các câu hỏi và đợi người thân tham gia đối thoại.
-                  </p>
-                  
-                  <form onSubmit={handleCreateRoom}>
-                    <div className="form-group">
-                      <label>Tên Phòng Kết Nối</label>
-                      <input 
-                        type="text" 
-                        placeholder="VD: Gia đình thân thương, Bố Mẹ và Tôm..." 
-                        value={createRoomName} 
-                        onChange={(e) => setCreateRoomName(e.target.value)}
-                      />
-                    </div>
+                {activeRoomTab === 'create' && (
+                  <div className="card animate-fade">
+                    <div className="card-icon" style={{ backgroundColor: 'rgba(224, 122, 95, 0.12)', color: 'var(--primary)' }}>🏡</div>
+                    <h3 className="card-title">Tạo Phòng Kết Nối Mới</h3>
+                    <p className="card-desc" style={{ marginBottom: '20px' }}>
+                      Khởi tạo phòng thấu hiểu riêng tư. Bạn sẽ là người đầu tiên soạn thảo các câu hỏi và đợi người thân tham gia đối thoại.
+                    </p>
+                    
+                    <form onSubmit={handleCreateRoom}>
+                      <div className="form-group">
+                        <label>Tên Phòng Kết Nối</label>
+                        <input 
+                          type="text" 
+                          placeholder="VD: Gia đình thân thương, Bố Mẹ và Tôm..." 
+                          value={createRoomName} 
+                          onChange={(e) => setCreateRoomName(e.target.value)}
+                        />
+                      </div>
 
-                    <div className="form-group">
-                      <label>Mật Khẩu Phòng (để bảo mật tối đa)</label>
-                      <input 
-                        type="password" 
-                        placeholder="Nhập mật khẩu tự chọn" 
-                        value={createRoomPass} 
-                        onChange={(e) => setCreateRoomPass(e.target.value)}
-                      />
-                    </div>
+                      <div className="form-group">
+                        <label>Mật Khẩu Phòng (để bảo mật tối đa)</label>
+                        <input 
+                          type="password" 
+                          placeholder="Nhập mật khẩu tự chọn" 
+                          value={createRoomPass} 
+                          onChange={(e) => setCreateRoomPass(e.target.value)}
+                        />
+                      </div>
 
-                    <div className="form-group">
-                      <label>Tên Hiển Thị Của Bạn</label>
-                      <input 
-                        type="text" 
-                        placeholder={currentUser ? `Mặc định: ${currentUser.name}` : "VD: Bố Tuấn, Mẹ Hà, Con gái Linh..."}
-                        value={createCreatorName} 
-                        onChange={(e) => setCreateCreatorName(e.target.value)}
-                      />
-                    </div>
+                      <div className="form-group">
+                        <label>Tên Hiển Thị Của Bạn</label>
+                        <input 
+                          type="text" 
+                          placeholder={currentUser ? `Mặc định: ${currentUser.name}` : "VD: Bố Tuấn, Mẹ Hà, Con gái Linh..."}
+                          value={createCreatorName} 
+                          onChange={(e) => setCreateCreatorName(e.target.value)}
+                        />
+                      </div>
 
-                    <div className="form-group">
-                      <label>Vai Trò Của Bạn Trong Phòng</label>
-                      <div className="role-picker">
-                        <div 
-                          className={`role-card-opt ${createCreatorRole === 'parent' ? 'selected' : ''}`}
-                          onClick={() => setCreateCreatorRole('parent')}
-                        >
-                          <span className="role-icon-sim">🐻</span>
-                          <span className="role-title-sim">Cha Mẹ</span>
-                        </div>
-                        <div 
-                          className={`role-card-opt ${createCreatorRole === 'child' ? 'selected' : ''}`}
-                          onClick={() => setCreateCreatorRole('child')}
-                        >
-                          <span className="role-icon-sim">🐰</span>
-                          <span className="role-title-sim">Con Cái</span>
+                      <div className="form-group">
+                        <label>Vai Trò Của Bạn Trong Phòng</label>
+                        <div className="role-picker">
+                          <div 
+                            className={`role-card-opt ${createCreatorRole === 'parent' ? 'selected' : ''}`}
+                            onClick={() => setCreateCreatorRole('parent')}
+                          >
+                            <span className="role-icon-sim">🐻</span>
+                            <span className="role-title-sim">Cha Mẹ</span>
+                          </div>
+                          <div 
+                            className={`role-card-opt ${createCreatorRole === 'child' ? 'selected' : ''}`}
+                            onClick={() => setCreateCreatorRole('child')}
+                          >
+                            <span className="role-icon-sim">🐰</span>
+                            <span className="role-title-sim">Con Cái</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                      Tạo Phòng & Bắt Đầu Ngay
-                    </button>
-                  </form>
-                </div>
+                      <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                        Tạo Phòng & Bắt Đầu Ngay
+                      </button>
+                    </form>
+                  </div>
+                )}
 
-                {/* 2. THAM GIA PHÒNG SẴN CÓ + DANH SÁCH PHÒNG ĐÃ LƯU */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-                  
-                  {/* Tham gia phòng */}
-                  <div className="card" id="join-room-section">
+                {/* 2. THAM GIA PHÒNG SẴN CÓ */}
+                {activeRoomTab === 'join' && (
+                  <div className="card animate-fade" id="join-room-section">
                     <div className="card-icon" style={{ backgroundColor: 'rgba(61, 90, 128, 0.12)', color: 'var(--secondary)' }}>🔑</div>
                     <h3 className="card-title">Tham Gia Phòng Có Sẵn</h3>
                     <p className="card-desc" style={{ marginBottom: '20px' }}>
@@ -1130,50 +1193,50 @@ function App() {
                       </button>
                     </form>
                   </div>
+                )}
 
-                  {/* Phòng đã lưu */}
-                  <div className="card" style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: '18px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      ⭐️ Phòng Đang Liên Kết Của Tôi
-                    </h3>
-                    {savedRoomIds.length === 0 ? (
-                      <p style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '13.5px' }}>
-                        Bạn chưa lưu hoặc tham gia phòng nào gần đây. Hãy tạo hoặc kết nối để lưu giữ lịch sử.
-                      </p>
-                    ) : (
-                      <div className="saved-rooms-list">
-                        {savedRoomIds.map(id => {
-                          const r = rooms.find(room => room.id === id);
-                          if (!r) return null;
-                          return (
-                            <div className="saved-room-card" key={r.id}>
-                              <div className="room-meta-info">
-                                <span className="room-meta-name">{r.name}</span>
-                                <span className="room-meta-details">ID: {r.id} | Trạng thái: {
-                                  r.status === 'waiting' ? 'Đang đợi kết nối' :
-                                  r.status === 'quiz' ? 'Làm bài kiểm tra' :
-                                  r.status === 'review' ? 'AI đang nhận xét' : 'Đã hoàn thành'
-                                }</span>
-                              </div>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button className="btn btn-secondary btn-sm" onClick={() => handleQuickJoinSavedRoom(r)}>
-                                  Kết Nối
-                                </button>
-                                <button 
-                                  className="btn btn-outline btn-sm" 
-                                  onClick={() => toggleBookmarkRoom(r.id)} 
-                                  style={{ padding: '8px', minWidth: '36px' }}
-                                  title="Xóa khỏi danh sách lưu"
-                                >
-                                  ❌
-                                </button>
-                              </div>
+                {/* 3. PHÒNG ĐÃ LƯU (Luôn hiển thị bên dưới rất tiện lợi) */}
+                <div className="card animate-fade" style={{ marginTop: '24px' }}>
+                  <h3 style={{ fontSize: '18px', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    ⭐️ Phòng Đang Liên Kết Của Tôi
+                  </h3>
+                  {savedRoomIds.length === 0 ? (
+                    <p style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '13.5px' }}>
+                      Bạn chưa lưu hoặc tham gia phòng nào gần đây. Hãy tạo hoặc kết nối để lưu giữ lịch sử.
+                    </p>
+                  ) : (
+                    <div className="saved-rooms-list">
+                      {savedRoomIds.map(id => {
+                        const r = rooms.find(room => room.id === id);
+                        if (!r) return null;
+                        return (
+                          <div className="saved-room-card" key={r.id}>
+                            <div className="room-meta-info">
+                              <span className="room-meta-name">{r.name}</span>
+                              <span className="room-meta-details">ID: {r.id} | Trạng thái: {
+                                r.status === 'waiting' ? 'Đang đợi kết nối' :
+                                r.status === 'quiz' ? 'Làm bài kiểm tra' :
+                                r.status === 'review' ? 'AI đang nhận xét' : 'Đã hoàn thành'
+                              }</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button className="btn btn-secondary btn-sm" onClick={() => handleQuickJoinSavedRoom(r)}>
+                                Kết Nối
+                              </button>
+                              <button 
+                                className="btn btn-outline btn-sm" 
+                                onClick={() => toggleBookmarkRoom(r.id)} 
+                                style={{ padding: '8px', minWidth: '36px' }}
+                                title="Xóa khỏi danh sách lưu"
+                              >
+                                ❌
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
