@@ -140,6 +140,12 @@ function App() {
   // Trạng thái Tab SPA của Phòng (Tạo phòng hoặc Tham gia)
   const [activeRoomTab, setActiveRoomTab] = useState('create'); // 'create' | 'join'
 
+  // Trạng thái Popup Alert thông minh
+  const [showAuthAlertModal, setShowAuthAlertModal] = useState(false);
+  const [authAlertTitle, setAuthAlertTitle] = useState('');
+  const [authAlertMessage, setAuthAlertMessage] = useState('');
+  const [authAlertRedirect, setAuthAlertRedirect] = useState(null);
+
   // --- STATE BANNER TRÍCH DẪN NGẪU NHIÊN ---
   const [activeQuote, setActiveQuote] = useState(COMFORT_QUOTES[0]);
 
@@ -451,8 +457,21 @@ function App() {
     e.preventDefault();
     setRoomError('');
 
-    if (!createRoomName || !createRoomPass || !createCreatorName) {
-      setRoomError('Vui lòng nhập đầy đủ Tên phòng, Mật khẩu và Tên hiển thị.');
+    // 1. Yêu cầu đăng nhập để tạo phòng
+    if (!currentUser) {
+      setAuthAlertTitle('Yêu Cầu Đăng Nhập');
+      setAuthAlertMessage('Bạn cần đăng nhập tài khoản trước khi tạo phòng kết nối để hệ thống ghi nhớ lịch sử thấu cảm của gia đình bạn.');
+      setAuthAlertRedirect('login');
+      setShowAuthAlertModal(true);
+      return;
+    }
+
+    // 2. Yêu cầu nhập đầy đủ thông tin phòng
+    if (!createRoomName.trim() || !createRoomPass.trim() || !createCreatorName.trim()) {
+      setAuthAlertTitle('Thiếu Thông Tin Tạo Phòng');
+      setAuthAlertMessage('Vui lòng nhập đầy đủ các thông tin: Tên phòng kết nối, Mật khẩu phòng bảo mật và Tên hiển thị của bạn.');
+      setAuthAlertRedirect(null);
+      setShowAuthAlertModal(true);
       return;
     }
 
@@ -519,8 +538,12 @@ function App() {
     e.preventDefault();
     setRoomError('');
 
-    if (!joinRoomId || !joinRoomPass || !joinUserName) {
-      setRoomError('Vui lòng nhập mã phòng, mật khẩu và tên hiển thị.');
+    // Yêu cầu nhập đầy đủ thông tin tham gia phòng
+    if (!joinRoomId.trim() || !joinRoomPass.trim() || !joinUserName.trim()) {
+      setAuthAlertTitle('Thiếu Thông Tin Kết Nối');
+      setAuthAlertMessage('Vui lòng điền đầy đủ các thông tin: Mã phòng kết nối (ID), Mật khẩu phòng và Tên hiển thị của bạn.');
+      setAuthAlertRedirect(null);
+      setShowAuthAlertModal(true);
       return;
     }
 
@@ -2323,6 +2346,100 @@ function App() {
           </p>
         </div>
       </footer>
+      {/* POPUP THÔNG BÁO THÔNG MINH (GLASSMORPHIC DIALOG MODAL) */}
+      {showAuthAlertModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(31, 24, 19, 0.65)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }} className="animate-fade">
+          <div style={{
+            backgroundColor: 'var(--bg-card)',
+            border: '2.5px solid var(--border)',
+            borderRadius: '24px',
+            padding: '30px 24px',
+            maxWidth: '380px',
+            width: '100%',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+            textAlign: 'center',
+            position: 'relative'
+          }} className="animate-slide">
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '16px',
+              lineHeight: 1
+            }}>
+              ⚠️
+            </div>
+            
+            <h3 style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 800,
+              fontSize: '22px',
+              color: 'var(--text)',
+              marginBottom: '12px'
+            }}>
+              {authAlertTitle || "Thông Báo Quan Trọng"}
+            </h3>
+            
+            <p style={{
+              fontSize: '15px',
+              color: 'var(--text)',
+              fontWeight: 600,
+              lineHeight: 1.5,
+              marginBottom: '26px'
+            }}>
+              {authAlertMessage}
+            </p>
+            
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              {authAlertRedirect ? (
+                <>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      setShowAuthAlertModal(false);
+                      navigateTo(authAlertRedirect);
+                    }}
+                    style={{ width: '100%', fontWeight: '700' }}
+                  >
+                    Đăng Nhập Ngay 🔑
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => setShowAuthAlertModal(false)}
+                    style={{ width: '100%', fontWeight: '700' }}
+                  >
+                    Đóng Cửa Sổ
+                  </button>
+                </>
+              ) : (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => setShowAuthAlertModal(false)}
+                  style={{ width: '100%', fontWeight: '700' }}
+                >
+                  Tôi Đã Hiểu
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
