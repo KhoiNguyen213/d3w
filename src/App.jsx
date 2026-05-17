@@ -136,6 +136,8 @@ function App() {
   const [profileBirthday, setProfileBirthday] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
+  const [profileAvatar, setProfileAvatar] = useState('');
+  const [profileAvatarMascotName, setProfileAvatarMascotName] = useState('');
 
   // Trạng thái Tab SPA của Phòng (Tạo phòng hoặc Tham gia)
   const [activeRoomTab, setActiveRoomTab] = useState('create'); // 'create' | 'join'
@@ -233,6 +235,8 @@ function App() {
         setProfileAge(userFound.age || '');
         setProfileGender(userFound.gender || '');
         setProfileBirthday(userFound.birthday || '');
+        setProfileAvatar(userFound.mascot || currentUser.mascot || '🦊');
+        setProfileAvatarMascotName(userFound.mascotName || currentUser.mascotName || 'Mascot');
       }
       setProfileSuccess('');
       setProfileError('');
@@ -416,7 +420,9 @@ function App() {
       name: profileName.trim(),
       age: profileAge,
       gender: profileGender,
-      birthday: profileBirthday
+      birthday: profileBirthday,
+      mascot: profileAvatar,
+      mascotName: profileAvatarMascotName
     };
     users[userIndex] = updatedUserInfo;
     localStorage.setItem('HN_registered_users', JSON.stringify(users));
@@ -424,12 +430,46 @@ function App() {
     // Cập nhật phiên đăng nhập (session) hiện thời
     const updatedSessionUser = {
       ...currentUser,
-      name: profileName.trim()
+      name: profileName.trim(),
+      mascot: profileAvatar,
+      mascotName: profileAvatarMascotName
     };
     setCurrentUser(updatedSessionUser);
     localStorage.setItem('HN_current_user', JSON.stringify(updatedSessionUser));
 
     setProfileSuccess('Cập nhật thông tin tài khoản thành công! 🌸');
+  };
+
+  // Xử lý paste ảnh từ clipboard
+  const handleImagePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setProfileAvatar(event.target.result); // base64 string
+            setProfileAvatarMascotName('Ảnh Đại Diện Dán');
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    }
+  };
+
+  // Xử lý tải ảnh lên từ thư viện
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setProfileAvatar(event.target.result); // base64 string
+        setProfileAvatarMascotName('Ảnh Đại Diện Tải Lên');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // ============================================================================
@@ -941,8 +981,12 @@ function App() {
                 style={{ cursor: 'pointer' }}
                 title="Quản lý tài khoản"
               >
-                <div className="avatar-circle" style={{ backgroundColor: currentUser.avatarColor }}>
-                  <span className="avatar-img-sim">{currentUser.mascot}</span>
+                <div className="avatar-circle" style={{ backgroundColor: currentUser.avatarColor, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {currentUser.mascot && (currentUser.mascot.startsWith('data:image') || currentUser.mascot.startsWith('http')) ? (
+                    <img src={currentUser.mascot} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span className="avatar-img-sim">{currentUser.mascot}</span>
+                  )}
                 </div>
                 <div className="user-avatar-text" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.1 }}>{currentUser.name}</span>
@@ -1764,7 +1808,7 @@ function App() {
 
             <div className="card">
               <form onSubmit={handleSaveProfile}>
-                <div className="form-group">
+                 <div className="form-group">
                   <label>Họ và Tên <span style={{ color: 'red' }}>*</span></label>
                   <input 
                     type="text" 
@@ -1773,6 +1817,146 @@ function App() {
                     onChange={(e) => setProfileName(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '24px' }}>
+                  <label style={{ fontWeight: '700', display: 'block', marginBottom: '10px' }}>Ảnh Đại Diện Của Bạn</label>
+                  
+                  {/* Current Avatar Display */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '72px',
+                      height: '72px',
+                      borderRadius: '50%',
+                      backgroundColor: currentUser.avatarColor || 'var(--primary)',
+                      border: '3px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '36px',
+                      overflow: 'hidden',
+                      boxShadow: 'var(--shadow)',
+                      flexShrink: 0
+                    }}>
+                      {profileAvatar && (profileAvatar.startsWith('data:image') || profileAvatar.startsWith('http')) ? (
+                        <img src={profileAvatar} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span>{profileAvatar || "🦊"}</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', lineHeight: 1.4 }}>
+                        Nhấp chọn Mascot hoạt hình bên dưới, dán ảnh sao chép hoặc tải ảnh lên từ thiết bị.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Preset Mascots */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--secondary)', display: 'block', marginBottom: '8px' }}>
+                      🦁 Chọn Mascot Hoạt Hình:
+                    </span>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      padding: '8px',
+                      backgroundColor: 'rgba(140, 98, 57, 0.05)',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border)',
+                      justifyContent: 'center'
+                    }}>
+                      {MASCOTS.map((m, i) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setProfileAvatar(m);
+                            setProfileAvatarMascotName(MASCOT_NAMES[i]);
+                          }}
+                          style={{
+                            fontSize: '20px',
+                            background: profileAvatar === m ? 'var(--primary-light)' : 'none',
+                            border: profileAvatar === m ? '2px solid var(--primary)' : '2px solid transparent',
+                            borderRadius: '50%',
+                            width: '38px',
+                            height: '38px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s ease',
+                            boxShadow: profileAvatar === m ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                            padding: 0
+                          }}
+                          title={MASCOT_NAMES[i]}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Paste Clipboard Dropzone & File Input Upload picker */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    
+                    {/* Paste dropzone */}
+                    <div 
+                      onPaste={handleImagePaste}
+                      tabIndex="0"
+                      style={{
+                        border: '2px dashed var(--border)',
+                        borderRadius: '16px',
+                        padding: '12px 8px',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        backgroundColor: 'var(--bg-card)',
+                        outline: 'none',
+                        transition: 'all 0.2s ease',
+                        fontSize: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                      onFocus={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
+                      onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                      title="Click vào đây và nhấn Ctrl+V (hoặc dán) ảnh đã chụp/sao chép"
+                    >
+                      <span style={{ fontSize: '20px' }}>📋</span>
+                      <span style={{ fontWeight: '700', color: 'var(--text)' }}>Dán Ảnh Sao Chép</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Click & nhấn Ctrl+V</span>
+                    </div>
+
+                    {/* File Upload picker */}
+                    <label style={{
+                      border: '2px dashed var(--border)',
+                      borderRadius: '16px',
+                      padding: '12px 8px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      backgroundColor: 'var(--bg-card)',
+                      fontSize: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <span style={{ fontSize: '20px' }}>📁</span>
+                      <span style={{ fontWeight: '700', color: 'var(--text)' }}>Tải File Ảnh Lên</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Chọn từ máy của bạn</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        style={{ display: 'none' }} 
+                      />
+                    </label>
+
+                  </div>
                 </div>
 
                 <div className="form-group">
@@ -2364,13 +2548,13 @@ function App() {
           padding: '20px'
         }} className="animate-fade">
           <div style={{
-            backgroundColor: 'var(--bg-card)',
-            border: '2.5px solid var(--border)',
-            borderRadius: '24px',
-            padding: '30px 24px',
+            backgroundColor: '#FAEDCD',
+            border: '3px solid #D4A373',
+            borderRadius: '28px',
+            padding: '32px 24px',
             maxWidth: '380px',
             width: '100%',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+            boxShadow: '0 24px 48px rgba(92, 61, 46, 0.25)',
             textAlign: 'center',
             position: 'relative'
           }} className="animate-slide">
@@ -2386,7 +2570,7 @@ function App() {
               fontFamily: 'var(--font-heading)',
               fontWeight: 800,
               fontSize: '22px',
-              color: 'var(--text)',
+              color: '#5C3D2E',
               marginBottom: '12px'
             }}>
               {authAlertTitle || "Thông Báo Quan Trọng"}
@@ -2394,7 +2578,7 @@ function App() {
             
             <p style={{
               fontSize: '15px',
-              color: 'var(--text)',
+              color: '#5C3D2E',
               fontWeight: 600,
               lineHeight: 1.5,
               marginBottom: '26px'
