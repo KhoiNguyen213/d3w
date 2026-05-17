@@ -218,6 +218,7 @@ header {
   color: var(--text-main);
   cursor: pointer;
   transition: var(--transition);
+  flex-shrink: 0; /* Never squish the circle */
 }
 
 .theme-toggle:hover {
@@ -1215,6 +1216,12 @@ footer p {
 
   .user-avatar-text {
     display: none !important;
+  }
+
+  .theme-toggle {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
   }
 
   .nav-brand {
