@@ -125,6 +125,18 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
 
+  // Xem/Che mật khẩu
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+
+  // Quản lý tài khoản
+  const [profileName, setProfileName] = useState('');
+  const [profileAge, setProfileAge] = useState('');
+  const [profileGender, setProfileGender] = useState('');
+  const [profileBirthday, setProfileBirthday] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileError, setProfileError] = useState('');
+
   // --- STATE BANNER TRÍCH DẪN NGẪU NHIÊN ---
   const [activeQuote, setActiveQuote] = useState(COMFORT_QUOTES[0]);
 
@@ -201,6 +213,22 @@ function App() {
     // Chạy thử Sandbox AI
     triggerSandboxAI();
   }, []);
+
+  // Nạp dữ liệu profile khi vào view quản lý tài khoản hoặc khi thay đổi user
+  useEffect(() => {
+    if (currentUser) {
+      const users = JSON.parse(localStorage.getItem('HN_registered_users') || '[]');
+      const userFound = users.find(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+      if (userFound) {
+        setProfileName(userFound.name || '');
+        setProfileAge(userFound.age || '');
+        setProfileGender(userFound.gender || '');
+        setProfileBirthday(userFound.birthday || '');
+      }
+      setProfileSuccess('');
+      setProfileError('');
+    }
+  }, [currentUser, currentView]);
 
   // Đọc danh sách phòng từ LocalStorage
   const loadRoomsFromStorage = () => {
@@ -296,10 +324,12 @@ function App() {
     users.push(newUser);
     localStorage.setItem('HN_registered_users', JSON.stringify(users));
 
-    setAuthSuccess('Đăng ký tài khoản thành công! Hãy đăng nhập ngay.');
     setRegEmail('');
     setRegPassword('');
     setRegName('');
+    // Tự động chuyển sang giao diện đăng nhập và hiển thị thông báo thành công
+    setCurrentView('login');
+    setAuthSuccess('Đăng ký tài khoản thành công! Hãy đăng nhập ngay.');
   };
 
   const handleLogin = (e) => {
@@ -350,6 +380,47 @@ function App() {
       handleLeaveRoom();
     }
     navigateTo('home');
+  };
+
+  // Lưu thông tin chỉnh sửa tài khoản (Tên, Tuổi, Giới tính, Ngày sinh - Các trường này không bắt buộc trừ Tên)
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    setProfileSuccess('');
+    setProfileError('');
+
+    if (!profileName.trim()) {
+      setProfileError('Tên hiển thị không được để trống.');
+      return;
+    }
+
+    const users = JSON.parse(localStorage.getItem('HN_registered_users') || '[]');
+    const userIndex = users.findIndex(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+
+    if (userIndex === -1) {
+      setProfileError('Không tìm thấy tài khoản người dùng tương ứng.');
+      return;
+    }
+
+    // Cập nhật thông tin trong danh sách tài khoản đã đăng ký
+    const updatedUserInfo = {
+      ...users[userIndex],
+      name: profileName.trim(),
+      age: profileAge,
+      gender: profileGender,
+      birthday: profileBirthday
+    };
+    users[userIndex] = updatedUserInfo;
+    localStorage.setItem('HN_registered_users', JSON.stringify(users));
+
+    // Cập nhật phiên đăng nhập (session) hiện thời
+    const updatedSessionUser = {
+      ...currentUser,
+      name: profileName.trim()
+    };
+    setCurrentUser(updatedSessionUser);
+    localStorage.setItem('HN_current_user', JSON.stringify(updatedSessionUser));
+
+    setProfileSuccess('Cập nhật thông tin tài khoản thành công! 🌸');
   };
 
   // ============================================================================
@@ -837,7 +908,12 @@ function App() {
 
             {/* Trạng thái Đăng nhập với Mascot hoạt hình ngộ nghĩnh */}
             {currentUser ? (
-              <div className="user-avatar-badge">
+              <div 
+                className="user-avatar-badge" 
+                onClick={() => navigateTo('profile')} 
+                style={{ cursor: 'pointer' }}
+                title="Quản lý tài khoản"
+              >
                 <div className="avatar-circle" style={{ backgroundColor: currentUser.avatarColor }}>
                   <span className="avatar-img-sim">{currentUser.mascot}</span>
                 </div>
@@ -845,7 +921,7 @@ function App() {
                   <span style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.1 }}>{currentUser.name}</span>
                   <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{currentUser.mascotName}</span>
                 </div>
-                <button className="logout-btn" onClick={handleLogout} title="Đăng xuất">🚪</button>
+                <button className="logout-btn" onClick={(e) => { e.stopPropagation(); handleLogout(); }} title="Đăng xuất">🚪</button>
               </div>
             ) : (
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -1438,13 +1514,35 @@ function App() {
 
                 <div className="form-group">
                   <label>Mật Khẩu</label>
-                  <input 
-                    type="password" 
-                    placeholder="Nhập mật khẩu tài khoản" 
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showLoginPassword ? "text" : "password"} 
+                      placeholder="Nhập mật khẩu tài khoản" 
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      style={{ paddingRight: '48px' }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        lineHeight: 1
+                      }}
+                      title={showLoginPassword ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                    >
+                      {showLoginPassword ? '👁️' : '🙈'}
+                    </button>
+                  </div>
                 </div>
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '16px' }}>
@@ -1510,13 +1608,35 @@ function App() {
 
                 <div className="form-group">
                   <label>Mật Khẩu Mới</label>
-                  <input 
-                    type="password" 
-                    placeholder="Tối thiểu 6 ký tự bảo mật" 
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type={showRegPassword ? "text" : "password"} 
+                      placeholder="Tối thiểu 6 ký tự bảo mật" 
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                      style={{ paddingRight: '48px' }}
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        lineHeight: 1
+                      }}
+                      title={showRegPassword ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                    >
+                      {showRegPassword ? '👁️' : '🙈'}
+                    </button>
+                  </div>
                 </div>
 
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '16px' }}>
@@ -1530,6 +1650,108 @@ function App() {
                   Đăng nhập
                 </a>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====================================================================
+            7.5. VIEW AUTH: PROFILE MANAGEMENT (QUẢN LÝ TÀI KHOẢN)
+            ==================================================================== */}
+        {currentView === 'profile' && currentUser && (
+          <div className="container-mobile animate-slide">
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <h2 style={{ fontSize: '28px', marginBottom: '8px' }}>Quản Lý Tài Khoản</h2>
+              <p style={{ color: 'var(--text-muted)' }}>Chỉnh sửa thông tin cá nhân tùy chọn bên dưới.</p>
+            </div>
+
+            {profileError && (
+              <div style={{ backgroundColor: '#FADBD8', color: '#78281F', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontWeight: '600', border: '1px solid #F5B7B1', fontSize: '14px' }}>
+                ⚠️ {profileError}
+              </div>
+            )}
+
+            {profileSuccess && (
+              <div style={{ backgroundColor: '#D4EFDF', color: '#196F3D', padding: '12px 16px', borderRadius: '12px', marginBottom: '20px', fontWeight: '600', border: '1px solid #A9DFBF', fontSize: '14px' }}>
+                🌸 {profileSuccess}
+              </div>
+            )}
+
+            <div className="card">
+              <form onSubmit={handleSaveProfile}>
+                <div className="form-group">
+                  <label>Họ và Tên <span style={{ color: 'red' }}>*</span></label>
+                  <input 
+                    type="text" 
+                    placeholder="Nhập họ và tên hiển thị" 
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Tuổi (Không bắt buộc)</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    max="120"
+                    placeholder="VD: 16, 45 (Không bắt buộc)" 
+                    value={profileAge}
+                    onChange={(e) => setProfileAge(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Giới Tính (Không bắt buộc)</label>
+                  <select 
+                    value={profileGender} 
+                    onChange={(e) => setProfileGender(e.target.value)}
+                  >
+                    <option value="">-- Chưa chọn giới tính --</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Ngày Sinh (Không bắt buộc)</label>
+                  <input 
+                    type="date" 
+                    value={profileBirthday}
+                    onChange={(e) => setProfileBirthday(e.target.value)}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '14px' }}>
+                  Lưu Thay Đổi
+                </button>
+              </form>
+
+              <hr style={{ border: 'none', borderTop: '2px solid var(--border)', margin: '20px 0' }} />
+
+              <button 
+                type="button" 
+                className="btn" 
+                onClick={handleLogout}
+                style={{ 
+                  width: '100%', 
+                  backgroundColor: '#E63946', 
+                  color: 'white', 
+                  marginBottom: '14px' 
+                }}
+              >
+                🚪 Đăng Xuất Tài Khoản
+              </button>
+
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => navigateTo('home')}
+                style={{ width: '100%' }}
+              >
+                Quay Về Trang Chủ
+              </button>
             </div>
           </div>
         )}
