@@ -969,6 +969,20 @@ function App() {
     setSandboxResult(adviceHTML);
   };
 
+  // Tạo hình đại diện Google/Gmail đẹp mắt dựa trên ký tự đầu tiên của email/tên
+  const getGmailAvatarUrl = (email, name) => {
+    if (!email) return 'https://lh3.googleusercontent.com/a/default-user=s120-c';
+    const cleanEmail = email.trim().toLowerCase();
+    const firstChar = name ? name.charAt(0).toUpperCase() : cleanEmail.charAt(0).toUpperCase();
+    
+    // Tự động phân phối màu sắc Google dựa trên mã ký tự
+    const charCode = firstChar.charCodeAt(0);
+    const googleColors = ['4285F4', 'EA4335', 'FBBC05', '34A853']; // Google blue, red, yellow, green
+    const bgColor = googleColors[charCode % googleColors.length];
+    
+    return `https://ui-avatars.com/api/?name=${firstChar}&background=${bgColor}&color=fff&size=128&bold=true`;
+  };
+
   // Tính toán chỉ số thấu hiểu giả lập dựa trên khớp cảm xúc tương đồng
   const calculateUnderstandingScore = (room) => {
     if (!room || !room.compiledQuestions) return 70;
@@ -1957,7 +1971,7 @@ function App() {
                       boxShadow: 'var(--shadow)',
                       flexShrink: 0
                     }}>
-                      {profileAvatar && (profileAvatar.startsWith('data:image') || profileAvatar.startsWith('http')) ? (
+                      {profileAvatar && (profileAvatar.startsWith('data:image') || profileAvatar.startsWith('http') || profileAvatar.startsWith('https')) ? (
                         <img src={profileAvatar} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <span>{profileAvatar || "🦊"}</span>
@@ -1965,13 +1979,13 @@ function App() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', lineHeight: 1.4 }}>
-                        Nhấp chọn Mascot hoạt hình bên dưới, dán ảnh sao chép hoặc tải ảnh lên từ thiết bị.
+                        Chọn Mascot con vật đáng yêu bên dưới hoặc đồng bộ ảnh đại diện từ tài khoản Gmail của bạn.
                       </span>
                     </div>
                   </div>
 
                   {/* Preset Mascots */}
-                  <div style={{ marginBottom: '14px' }}>
+                  <div style={{ marginBottom: '18px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--secondary)', display: 'block', marginBottom: '8px' }}>
                       🦁 Chọn Mascot Hoạt Hình:
                     </span>
@@ -2016,65 +2030,62 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Paste Clipboard Dropzone & File Input Upload picker */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    
-                    {/* Paste dropzone */}
-                    <div 
-                      onPaste={handleImagePaste}
-                      tabIndex="0"
-                      style={{
-                        border: '2px dashed var(--border)',
+                  {/* Gmail Profile avatar selection */}
+                  <div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--secondary)', display: 'block', marginBottom: '8px' }}>
+                      📧 Ảnh Hồ Sơ Gmail Của Bạn:
+                    </span>
+                    {currentUser.email && currentUser.email.toLowerCase().endsWith('@gmail.com') ? (
+                      <div 
+                        onClick={() => {
+                          const gUrl = getGmailAvatarUrl(currentUser.email, currentUser.name);
+                          setProfileAvatar(gUrl);
+                          setProfileAvatarMascotName('Ảnh Hồ Sơ Gmail');
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          borderRadius: '16px',
+                          border: profileAvatar && profileAvatar.startsWith('https://ui-avatars.com') ? '2.5px solid var(--primary)' : '2.5px solid var(--border)',
+                          backgroundColor: profileAvatar && profileAvatar.startsWith('https://ui-avatars.com') ? 'rgba(224, 122, 95, 0.08)' : 'var(--bg-card)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: 'var(--shadow)'
+                        }}
+                      >
+                        <div style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          border: '2px solid var(--border)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <img src={getGmailAvatarUrl(currentUser.email, currentUser.name)} alt="gmail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                          <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text)' }}>Đồng bộ ảnh từ Gmail</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{currentUser.email}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{
+                        padding: '12px 16px',
                         borderRadius: '16px',
-                        padding: '12px 8px',
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                        backgroundColor: 'var(--bg-card)',
-                        outline: 'none',
-                        transition: 'all 0.2s ease',
-                        fontSize: '12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
-                      }}
-                      onFocus={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
-                      onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
-                      title="Click vào đây và nhấn Ctrl+V (hoặc dán) ảnh đã chụp/sao chép"
-                    >
-                      <span style={{ fontSize: '20px' }}>📋</span>
-                      <span style={{ fontWeight: '700', color: 'var(--text)' }}>Dán Ảnh Sao Chép</span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Click & nhấn Ctrl+V</span>
-                    </div>
-
-                    {/* File Upload picker */}
-                    <label style={{
-                      border: '2px dashed var(--border)',
-                      borderRadius: '16px',
-                      padding: '12px 8px',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      backgroundColor: 'var(--bg-card)',
-                      fontSize: '12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s ease'
-                    }}>
-                      <span style={{ fontSize: '20px' }}>📁</span>
-                      <span style={{ fontWeight: '700', color: 'var(--text)' }}>Tải File Ảnh Lên</span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Chọn từ máy của bạn</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleImageUpload} 
-                        style={{ display: 'none' }} 
-                      />
-                    </label>
-
+                        backgroundColor: 'rgba(140, 98, 57, 0.05)',
+                        border: '1.5px dashed var(--border)',
+                        color: 'var(--text-muted)',
+                        fontSize: '12.5px',
+                        textAlign: 'center'
+                      }}>
+                        ⚠️ Tính năng đồng bộ chỉ khả dụng khi tài khoản sử dụng đuôi <strong>@gmail.com</strong>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2273,13 +2284,6 @@ function App() {
                 </div>
               );
             })()}
-
-            {/* BACK HOME FOOTER ACTION */}
-            <div style={{ textAlign: 'center', marginTop: '20px', marginBottom: '40px' }}>
-              <button className="btn btn-secondary" onClick={() => navigateTo('home')}>
-                Quay Lại Trang Chủ
-              </button>
-            </div>
           </div>
         )}
 
