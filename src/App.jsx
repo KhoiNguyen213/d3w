@@ -2056,72 +2056,43 @@ function App() {
                       📧 Ảnh Đại Diện Gmail Của Bạn:
                     </span>
                     {currentUser.email && currentUser.email.toLowerCase().endsWith('@gmail.com') ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {/* Gravatar Sync Button */}
-                        <div 
-                          onClick={handleSyncGmailAvatar}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            padding: '12px 16px',
-                            borderRadius: '16px',
-                            border: profileAvatar && profileAvatar.includes('gravatar.com') ? '2.5px solid var(--primary)' : '2.5px solid var(--border)',
-                            backgroundColor: profileAvatar && profileAvatar.includes('gravatar.com') ? 'rgba(224, 122, 95, 0.08)' : 'var(--bg-card)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            boxShadow: 'var(--shadow)'
-                          }}
-                        >
-                          <div style={{
-                            width: '42px',
-                            height: '42px',
-                            borderRadius: '50%',
-                            overflow: 'hidden',
-                            border: '2px solid var(--border)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: 'white',
-                            flexShrink: 0
-                          }}>
+                      /* Gravatar Sync Button */
+                      <div 
+                        onClick={handleSyncGmailAvatar}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          borderRadius: '16px',
+                          border: profileAvatar && profileAvatar.includes('gravatar.com') ? '2.5px solid var(--primary)' : '2.5px solid var(--border)',
+                          backgroundColor: profileAvatar && profileAvatar.includes('gravatar.com') ? 'rgba(224, 122, 95, 0.08)' : 'var(--bg-card)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: 'var(--shadow)'
+                        }}
+                      >
+                        <div style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          border: '2px solid var(--border)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'white',
+                          flexShrink: 0
+                        }}>
+                          {profileAvatar && profileAvatar.includes('gravatar.com') ? (
+                            <img src={profileAvatar} alt="gmail preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
                             <span style={{ fontSize: '22px' }}>👤</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text)' }}>Đồng bộ ảnh đại diện thực tế</span>
-                            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Lấy ảnh đại diện đăng ký qua email này</span>
-                          </div>
+                          )}
                         </div>
-
-                        {/* Direct URL input for Google Photo */}
-                        <div style={{ marginTop: '4px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--secondary)', display: 'block', marginBottom: '6px' }}>
-                            🔗 Hoặc dán địa chỉ ảnh đại diện Gmail/Google:
-                          </label>
-                          <input 
-                            type="url" 
-                            placeholder="Dán link ảnh (https://lh3.googleusercontent.com/...)"
-                            value={profileAvatar && profileAvatar.startsWith('http') && !profileAvatar.includes('gravatar.com') ? profileAvatar : ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setProfileAvatar(val);
-                              setProfileAvatarMascotName('Ảnh Hồ Sơ Gmail');
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '12px 16px',
-                              borderRadius: '16px',
-                              border: profileAvatar && profileAvatar.startsWith('http') && !profileAvatar.includes('gravatar.com') ? '2.5px solid var(--primary)' : '2.5px solid var(--border)',
-                              backgroundColor: 'var(--bg-card)',
-                              fontSize: '13px',
-                              color: 'var(--text)',
-                              transition: 'all 0.2s ease',
-                              outline: 'none'
-                            }}
-                          />
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '6px', lineHeight: 1.4 }}>
-                            💡 <strong>Mẹo hay:</strong> Vào trang cá nhân Google của bạn, click chuột phải vào ảnh đại diện của bạn rồi chọn <strong>"Sao chép địa chỉ hình ảnh"</strong> và dán vào ô trên!
-                          </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                          <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text)' }}>Đồng bộ ảnh từ Gmail</span>
+                          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Tự động lấy ảnh từ tài khoản của bạn</span>
                         </div>
                       </div>
                     ) : (
