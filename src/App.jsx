@@ -155,6 +155,8 @@ function App() {
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
   const [savedRoomIds, setSavedRoomIds] = useState([]);
+  const [savedConclusions, setSavedConclusions] = useState([]);
+  const [activeViewedConclusion, setActiveViewedConclusion] = useState(null);
   
   // Trạng thái xem/che mật khẩu cho phòng
   const [showCreateRoomPass, setShowCreateRoomPass] = useState(false);
@@ -216,6 +218,12 @@ function App() {
     const savedBookmarks = localStorage.getItem('HN_saved_room_ids');
     if (savedBookmarks) {
       setSavedRoomIds(JSON.parse(savedBookmarks));
+    }
+
+    // Nạp danh sách kết luận đã lưu
+    const storedConclusions = localStorage.getItem('HN_saved_conclusions');
+    if (storedConclusions) {
+      setSavedConclusions(JSON.parse(storedConclusions));
     }
 
     // Load tất cả các phòng
@@ -665,6 +673,59 @@ function App() {
     localStorage.setItem('HN_saved_room_ids', JSON.stringify(updated));
   };
 
+  // Lưu Báo Cáo Kết Luận Thấu Hiểu của phòng đã hoàn thành
+  const handleSaveConclusion = (room) => {
+    if (!currentUser) {
+      setAuthAlertTitle('Yêu Cầu Đăng Nhập');
+      setAuthAlertMessage('Bạn cần có tài khoản và đăng nhập để có thể lưu trữ vĩnh viễn các kết luận thấu cảm từ AI.');
+      setAuthAlertRedirect('login');
+      setShowAuthAlertModal(true);
+      return;
+    }
+
+    const newConclusion = {
+      id: `${room.id}_${Date.now()}`,
+      roomId: room.id,
+      userEmail: currentUser.email.toLowerCase(),
+      roomName: room.name,
+      creatorName: room.creatorName,
+      joinerName: room.joinerName,
+      creatorRole: room.creatorRole,
+      joinerRole: room.creatorRole === 'parent' ? 'child' : 'parent',
+      score: calculateUnderstandingScore(room),
+      savedAt: new Date().toISOString(),
+      answers: room.answers,
+      compiledQuestions: room.compiledQuestions
+    };
+
+    // Kiểm tra xem đã lưu kết luận của phòng này chưa
+    const existingIndex = savedConclusions.findIndex(c => c.roomId === room.id && c.userEmail === currentUser.email.toLowerCase());
+    
+    let updated;
+    if (existingIndex !== -1) {
+      // Ghi đè báo cáo mới nhất
+      updated = [...savedConclusions];
+      updated[existingIndex] = newConclusion;
+    } else {
+      updated = [newConclusion, ...savedConclusions];
+    }
+
+    setSavedConclusions(updated);
+    localStorage.setItem('HN_saved_conclusions', JSON.stringify(updated));
+
+    setAuthAlertTitle('Lưu Trữ Thành Công 🌸');
+    setAuthAlertMessage(`Báo cáo thấu cảm của phòng "${room.name}" đã được lưu trữ an toàn trong kho tư liệu của bạn.`);
+    setAuthAlertRedirect(null);
+    setShowAuthAlertModal(true);
+  };
+
+  // Xóa kết luận đã lưu
+  const handleDeleteConclusion = (conclusionId) => {
+    const updated = savedConclusions.filter(c => c.id !== conclusionId);
+    setSavedConclusions(updated);
+    localStorage.setItem('HN_saved_conclusions', JSON.stringify(updated));
+  };
+
   const handleQuickJoinSavedRoom = (room) => {
     // Xác định vai trò đã từng lưu của phòng này hoặc hỏi
     const prevRole = sessionStorage.getItem(`HN_room_role_${room.id}`);
@@ -966,6 +1027,9 @@ function App() {
           <ul className="nav-links">
             <li><a className={`nav-item ${currentView === 'home' ? 'active' : ''}`} onClick={() => navigateTo('home')}>Trang Chủ</a></li>
             <li><a className={`nav-item ${currentView === 'mechanism' ? 'active' : ''}`} onClick={() => navigateTo('mechanism')}>Giải Thích Cơ Chế</a></li>
+            {currentUser && (
+              <li><a className={`nav-item ${currentView === 'saved-conclusions' ? 'active' : ''}`} onClick={() => navigateTo('saved-conclusions')}>Kết Luận Đã Lưu 📖</a></li>
+            )}
             <li><a className={`nav-item ${currentView === 'ai-info' ? 'active' : ''}`} onClick={() => navigateTo('ai-info')}>Tích Hợp AI</a></li>
             <li><a className={`nav-item ${currentView === 'about' ? 'active' : ''}`} onClick={() => navigateTo('about')}>Về Chúng Tôi</a></li>
             <li><a className={`nav-item ${currentView === 'contact' ? 'active' : ''}`} onClick={() => navigateTo('contact')}>Liên Hệ</a></li>
@@ -2082,6 +2146,144 @@ function App() {
         )}
 
         {/* ====================================================================
+            7.8. VIEW KẾT LUẬN ĐÃ LƯU (SAVED EMPATHY ARCHIVE)
+            ==================================================================== */}
+        {currentView === 'saved-conclusions' && currentUser && (
+          <div className="animate-slide">
+            <div style={{ textAlign: 'center', marginBottom: '35px' }}>
+              <h2 style={{ fontSize: '28px', marginBottom: '8px' }}>📖 Kho Tư Liệu Kết Luận</h2>
+              <p style={{ color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>
+                Nơi lưu trữ những báo cáo thấu hiểu, lời khuyên ứng xử từ trợ lý AI và chỉ số gắn kết qua từng chặng đường gia đình bạn đã đi qua.
+              </p>
+            </div>
+
+            {(() => {
+              const mySaved = savedConclusions.filter(c => c.userEmail === currentUser.email.toLowerCase());
+              
+              if (mySaved.length === 0) {
+                return (
+                  <div className="card" style={{ textAlign: 'center', padding: '40px 24px', maxWidth: '500px', margin: '0 auto' }}>
+                    <div style={{ fontSize: '56px', marginBottom: '20px' }}>📖</div>
+                    <h3 style={{ fontSize: '20px', marginBottom: '12px' }}>Chưa có báo cáo nào được lưu</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: 1.6, marginBottom: '24px' }}>
+                      Sau khi bạn và người thân hoàn thành tất cả các câu hỏi trong phòng kết nối, hãy bấm nút <strong>"Lưu Kết Luận Thấu Hiểu"</strong> ở trang kết quả để lưu giữ vĩnh viễn tư liệu quý giá này tại đây!
+                    </p>
+                    <button className="btn btn-primary" onClick={() => navigateTo('home')}>
+                      Quay Lại Trang Chủ
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+                  {mySaved.map((c) => (
+                    <div key={c.id} className="card" style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      border: '2px solid var(--border)',
+                      borderRadius: '20px',
+                      padding: '24px',
+                      position: 'relative',
+                      boxShadow: 'var(--shadow)',
+                      transition: 'transform 0.2s ease'
+                    }}>
+                      <div>
+                        {/* Card Header metadata */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                          <span style={{
+                            backgroundColor: 'rgba(140, 98, 57, 0.1)',
+                            color: 'var(--secondary)',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            fontSize: '11.5px',
+                            fontWeight: '700'
+                          }}>
+                            {c.roomName}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {new Date(c.savedAt).toLocaleDateString('vi-VN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+
+                        {/* Middle info */}
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
+                          <div style={{
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--primary)',
+                            color: 'white',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '800',
+                            fontSize: '15px',
+                            boxShadow: 'var(--shadow)',
+                            flexShrink: 0
+                          }}>
+                            <span>{c.score}%</span>
+                            <span style={{ fontSize: '7px', fontWeight: '500', textTransform: 'uppercase' }}>Thấu hiểu</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ fontSize: '16px', fontWeight: '800', margin: '0 0 4px 0' }}>Báo Cáo Thấu Hiểu AI</h4>
+                            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
+                              🐻 {c.creatorRole === 'parent' ? c.creatorName : c.joinerName} & 🐰 {c.creatorRole === 'child' ? c.creatorName : c.joinerName}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer Actions */}
+                      <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                        <button 
+                          className="btn btn-primary btn-sm" 
+                          onClick={() => setActiveViewedConclusion(c)}
+                          style={{ flex: 1, padding: '10px', fontSize: '13px' }}
+                        >
+                          📖 Xem Chi Tiết
+                        </button>
+                        <button 
+                          className="btn btn-sm" 
+                          onClick={() => {
+                            if (window.confirm(`Bạn có chắc chắn muốn xóa báo cáo của phòng "${c.roomName}" khỏi danh mục lưu trữ?`)) {
+                              handleDeleteConclusion(c.id);
+                            }
+                          }}
+                          style={{ 
+                            padding: '10px', 
+                            fontSize: '13px', 
+                            backgroundColor: 'rgba(230, 57, 70, 0.1)', 
+                            color: '#E63946',
+                            border: '1.5px solid rgba(230, 57, 70, 0.2)'
+                          }}
+                          title="Xóa báo cáo"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* BACK HOME FOOTER ACTION */}
+            <div style={{ textAlign: 'center', marginTop: '20px', marginBottom: '40px' }}>
+              <button className="btn btn-secondary" onClick={() => navigateTo('home')}>
+                Quay Lại Trang Chủ
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ====================================================================
             8. ACTIVE INTERACTIVE ROOM (KHÔNG GIAN PHÒNG ĐỒNG BỘ CHÍNH)
             ==================================================================== */}
         {currentView === 'room' && activeRoom && (
@@ -2532,12 +2734,15 @@ function App() {
                   <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
                     Bạn có thể tải báo cáo thấu hiểu này về lưu giữ làm kỷ niệm cột mốc gia đình hoặc in ra bản cứng.
                   </p>
-                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                    <button className="btn btn-primary" onClick={() => window.print()}>
-                      🖨️ Tải Báo Cáo PDF / In Ấn
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" onClick={() => handleSaveConclusion(activeRoom)} style={{ minWidth: '180px' }}>
+                      💾 Lưu Kết Luận Thấu Hiểu
                     </button>
-                    <button className="btn btn-secondary" onClick={handleLeaveRoom}>
-                      Quay Lại Bảng Điều Khiển
+                    <button className="btn btn-secondary" onClick={() => window.print()} style={{ minWidth: '150px' }}>
+                      🖨️ Tải PDF / In Ấn
+                    </button>
+                    <button className="btn btn-secondary" onClick={handleLeaveRoom} style={{ minWidth: '150px', border: '1px solid var(--border)' }}>
+                      Bảng Điều Khiển
                     </button>
                   </div>
                 </div>
@@ -2560,17 +2765,19 @@ function App() {
           <span className="mobile-nav-icon">⚙️</span>
           <span className="mobile-nav-text">Cơ Chế</span>
         </a>
+        {currentUser && (
+          <a className={`mobile-nav-item ${currentView === 'saved-conclusions' ? 'active' : ''}`} onClick={() => navigateTo('saved-conclusions')}>
+            <span className="mobile-nav-icon">📖</span>
+            <span className="mobile-nav-text">Lưu Trữ</span>
+          </a>
+        )}
         <a className={`mobile-nav-item ${currentView === 'ai-info' ? 'active' : ''}`} onClick={() => navigateTo('ai-info')}>
           <span className="mobile-nav-icon">🤖</span>
-          <span className="mobile-nav-text">Tích Hợp AI</span>
+          <span className="mobile-nav-text">AI</span>
         </a>
         <a className={`mobile-nav-item ${currentView === 'about' ? 'active' : ''}`} onClick={() => navigateTo('about')}>
           <span className="mobile-nav-icon">👥</span>
-          <span className="mobile-nav-text">Về Chúng Tôi</span>
-        </a>
-        <a className={`mobile-nav-item ${currentView === 'contact' ? 'active' : ''}`} onClick={() => navigateTo('contact')}>
-          <span className="mobile-nav-icon">📞</span>
-          <span className="mobile-nav-text">Liên Hệ</span>
+          <span className="mobile-nav-text">Chúng Tôi</span>
         </a>
       </nav>
 
@@ -2676,6 +2883,176 @@ function App() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHI TIẾT BÁO CÁO KẾT LUẬN ĐÃ LƯU (SAVED CONCLUSION DETAIL MODAL) */}
+      {activeViewedConclusion && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(31, 24, 19, 0.7)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }} className="animate-fade">
+          <div style={{
+            backgroundColor: 'var(--bg)',
+            border: '2.5px solid var(--border)',
+            borderRadius: '28px',
+            padding: '30px 24px',
+            maxWidth: '650px',
+            width: '100%',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            boxShadow: '0 24px 48px rgba(0, 0, 0, 0.4)',
+            position: 'relative'
+          }} className="animate-slide">
+            
+            {/* Modal Close Icon */}
+            <button 
+              onClick={() => setActiveViewedConclusion(null)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: 'var(--text-muted)'
+              }}
+            >
+              ✕
+            </button>
+
+            {/* Header info */}
+            <div style={{ textAlign: 'center', marginBottom: '24px', paddingRight: '20px' }}>
+              <span style={{
+                backgroundColor: 'rgba(140, 98, 57, 0.1)',
+                color: 'var(--secondary)',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '12px',
+                fontWeight: '700',
+                display: 'inline-block',
+                marginBottom: '8px'
+              }}>
+                Phòng: {activeViewedConclusion.roomName}
+              </span>
+              <h2 style={{ fontSize: '24px', margin: '0 0 6px 0' }}>Báo Cáo Thấu Hiểu Gia Đình</h2>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Đã lưu vào lúc: {new Date(activeViewedConclusion.savedAt).toLocaleDateString('vi-VN')} {new Date(activeViewedConclusion.savedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+
+            {/* Score circle */}
+            <div className="final-score-header" style={{ padding: '20px', marginBottom: '24px' }}>
+              <div className="circular-score-val" style={{ margin: '0 auto 12px auto' }}>
+                <span className="score-number">{activeViewedConclusion.score}%</span>
+                <span className="score-label">Mức thấu cảm</span>
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+                Hành trình đối thoại thấu hiểu của <strong>{activeViewedConclusion.creatorRole === 'parent' ? activeViewedConclusion.creatorName : activeViewedConclusion.joinerName} (Cha Mẹ)</strong> và <strong>{activeViewedConclusion.creatorRole === 'child' ? activeViewedConclusion.creatorName : activeViewedConclusion.joinerName} (Con Cái)</strong>.
+              </p>
+            </div>
+
+            {/* Compiled answers summary */}
+            <h3 style={{ fontSize: '16px', borderBottom: '2px solid var(--border)', paddingBottom: '8px', marginBottom: '16px', color: 'var(--primary)' }}>
+              💬 Nội Dung Đối Thoại & Lời Khuyên AI
+            </h3>
+
+            {activeViewedConclusion.compiledQuestions.map((q, idx) => {
+              const parentAns = activeViewedConclusion.creatorRole === 'parent' ? activeViewedConclusion.answers.creator[idx] : activeViewedConclusion.answers.joiner[idx];
+              const childAns = activeViewedConclusion.creatorRole === 'child' ? activeViewedConclusion.answers.creator[idx] : activeViewedConclusion.answers.joiner[idx];
+              
+              const parentName = activeViewedConclusion.creatorRole === 'parent' ? activeViewedConclusion.creatorName : activeViewedConclusion.joinerName;
+              const childName = activeViewedConclusion.creatorRole === 'child' ? activeViewedConclusion.creatorName : activeViewedConclusion.joinerName;
+
+              const aiAdviceHTML = generateSimulatedAIAdvice(
+                q.text,
+                parentAns ? parentAns.text : 'Chưa trả lời',
+                parentAns ? parentAns.emotion : 'hopeful',
+                childAns ? childAns.text : 'Chưa trả lời',
+                childAns ? childAns.emotion : 'hopeful'
+              );
+
+              return (
+                <div key={q.id} style={{
+                  backgroundColor: 'rgba(140, 98, 57, 0.04)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>CÂU HỎI {idx + 1}</span>
+                  <h4 style={{ fontSize: '15px', margin: '4px 0 12px 0' }}>{q.text}</h4>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '12.5px', borderLeft: '3px solid var(--secondary)', paddingLeft: '8px' }}>
+                      <strong>🐻 {parentName} (Cha Mẹ):</strong> "{parentAns ? parentAns.text : 'Chưa trả lời'}" 
+                      {parentAns && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8 }}>({getEmotionIcon(parentAns.emotion).emoji} {getEmotionIcon(parentAns.emotion).text})</span>}
+                    </div>
+                    <div style={{ fontSize: '12.5px', borderLeft: '3px solid var(--primary)', paddingLeft: '8px' }}>
+                      <strong>🐰 {childName} (Con Cái):</strong> "{childAns ? childAns.text : 'Chưa trả lời'}"
+                      {childAns && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8 }}>({getEmotionIcon(childAns.emotion).emoji} {getEmotionIcon(childAns.emotion).text})</span>}
+                    </div>
+                  </div>
+
+                  {/* AI Advice body */}
+                  <div style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    fontSize: '12px',
+                    lineHeight: 1.4,
+                    color: 'var(--text)'
+                  }} dangerouslySetInnerHTML={{ __html: aiAdviceHTML }} />
+                </div>
+              );
+            })}
+
+            {/* Static guidance cards */}
+            <h3 style={{ fontSize: '16px', borderBottom: '2px solid var(--border)', paddingBottom: '8px', marginTop: '24px', marginBottom: '16px', color: 'var(--primary)' }}>
+              🌱 Định Hướng Hành Vi Thay Đổi
+            </h3>
+            
+            <div className="final-advice-split" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginBottom: '24px' }}>
+              <div className="final-advice-card parent" style={{ margin: 0, padding: '16px' }}>
+                <h4 style={{ color: 'var(--secondary)', margin: '0 0 8px 0' }}>🐻 Nhóm Thay Đổi Cho Cha Mẹ</h4>
+                <ul className="advice-list-items" style={{ fontSize: '12.5px', margin: 0, paddingLeft: '20px' }}>
+                  <li><strong>Ghi nhận nỗ lực:</strong> Khen ngợi và ghi nhận hành vi tích cực trước khi chỉ ra lỗi sai.</li>
+                  <li><strong>Hỏi han ôn hòa:</strong> Đổi câu hỏi kiểm soát thành câu hỏi mở: <em>"Bố mẹ có thể giúp gì được con không?"</em>.</li>
+                  <li><strong>Đặt niềm tin:</strong> Cho con cơ hội chịu trách nhiệm với những quyết định nhỏ.</li>
+                </ul>
+              </div>
+
+              <div className="final-advice-card child" style={{ margin: 0, padding: '16px' }}>
+                <h4 style={{ color: 'var(--primary)', margin: '0 0 8px 0' }}>🐰 Nhóm Thay Đổi Cho Con Cái</h4>
+                <ul className="advice-list-items" style={{ fontSize: '12.5px', margin: 0, paddingLeft: '20px' }}>
+                  <li><strong>Chủ động thông báo:</strong> Chia sẻ trước những kế hoạch nhỏ để giảm bớt hoài nghi của cha mẹ.</li>
+                  <li><strong>Tâm sự ôn hòa:</strong> Đón nhận lời cằn nhằn như một thói quen diễn đạt vụng về của tình thương.</li>
+                  <li><strong>Bộc bạch bình tĩnh:</strong> Dùng cấu trúc: <em>"Con rất muốn..., bố mẹ hãy cho con thử nghiệm một lần nhé."</em></li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Modal footer Close */}
+            <div style={{ textAlign: 'center' }}>
+              <button className="btn btn-primary" onClick={() => setActiveViewedConclusion(null)} style={{ minWidth: '150px' }}>
+                Đóng Báo Cáo
+              </button>
+            </div>
+
           </div>
         </div>
       )}
