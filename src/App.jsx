@@ -889,43 +889,19 @@ function App() {
                 </div>
               </div>
               <div className="hero-illustration">
-                {/* SVG Illustration stylized to look super premium */}
-                <svg viewBox="0 0 500 400" className="hero-card-illus" style={{ background: 'var(--card-bg)' }}>
-                  <defs>
-                    <linearGradient id="warmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="rgba(224, 122, 95, 0.2)" />
-                      <stop offset="100%" stopColor="rgba(129, 178, 154, 0.2)" />
-                    </linearGradient>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#warmGrad)" rx="30" />
-                  
-                  {/* Decorative Elements */}
-                  <circle cx="100" cy="80" r="40" fill="var(--primary)" opacity="0.15" />
-                  <circle cx="400" cy="320" r="60" fill="var(--secondary)" opacity="0.1" />
-
-                  {/* Parent mascot vector symbolized */}
-                  <g transform="translate(160, 200)">
-                    <circle cx="0" cy="0" r="45" fill="var(--secondary)" opacity="0.8" />
-                    <text x="-15" y="10" fontSize="40" fill="white">🐻</text>
-                    <text x="-25" y="-60" fontSize="13" fontWeight="bold" fill="var(--text-main)">Cha Mẹ</text>
-                  </g>
-
-                  {/* Connection Bridge */}
-                  <path d="M 215 200 Q 250 170 285 200" fill="none" stroke="var(--primary)" strokeWidth="4" strokeDasharray="6,4" />
-                  <text x="238" y="160" fontSize="20">❤️</text>
-
-                  {/* Child mascot vector symbolized */}
-                  <g transform="translate(340, 200)">
-                    <circle cx="0" cy="0" r="40" fill="var(--primary)" opacity="0.8" />
-                    <text x="-15" y="10" fontSize="35" fill="white">🐰</text>
-                    <text x="-25" y="-55" fontSize="13" fontWeight="bold" fill="var(--text-main)">Con Cái</text>
-                  </g>
-
-                  <rect x="80" y="300" width="340" height="60" rx="15" fill="var(--card-bg)" opacity="0.9" stroke="var(--border)" strokeWidth="2" />
-                  <text x="250" y="335" textAnchor="middle" fill="var(--text-main)" fontSize="13" fontWeight="600">
-                    "AI lắng nghe cả hai bên bằng sự trân trọng tuyệt đối"
-                  </text>
-                </svg>
+                <img 
+                  src="/hero-cozy.png" 
+                  alt="Không gian gia đình ấm áp thấu cảm" 
+                  className="hero-card-illus"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    borderRadius: '24px',
+                    border: '2px solid var(--border)',
+                    boxShadow: 'var(--shadow)',
+                    display: 'block'
+                  }}
+                />
               </div>
             </section>
 
