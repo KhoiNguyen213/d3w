@@ -879,7 +879,7 @@ function App() {
                 <p>
                   "Hiểu Nhau" là không gian an toàn, riêng tư giúp phụ huynh và con cái xích lại gần nhau hơn. Thông qua quy trình thiết kế câu hỏi chung và làm bài kiểm tra hai bên, AI thấu cảm sẽ đưa ra những lời khuyên nhẹ nhàng, không chỉ trích, hàn gắn tình cảm gia đình.
                 </p>
-                <div style={{ display: 'flex', gap: '16px' }}>
+                <div className="hero-btn-group">
                   <a className="btn btn-primary" href="#create-room-section">
                     Bắt Đầu Ngay ➜
                   </a>
