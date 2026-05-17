@@ -452,26 +452,6 @@ function App() {
     setProfileSuccess('Cập nhật thông tin tài khoản thành công! 🌸');
   };
 
-  // Đồng bộ ảnh Gmail thực tế thông qua Gravatar API (sử dụng mã hóa SHA-256)
-  const handleSyncGmailAvatar = async () => {
-    if (!currentUser.email) return;
-    try {
-      const emailLower = currentUser.email.trim().toLowerCase();
-      // Sử dụng mã hóa SHA-256 thuần của trình duyệt (crypto.subtle)
-      const msgBuffer = new TextEncoder().encode(emailLower);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-      
-      // Tạo URL ảnh từ Gravatar (trả về ảnh thực tế của tài khoản)
-      const avatarUrl = `https://gravatar.com/avatar/${hashHex}?s=150&d=mp`;
-      setProfileAvatar(avatarUrl);
-      setProfileAvatarMascotName('Ảnh Hồ Sơ Gmail');
-    } catch (err) {
-      console.error("Lỗi đồng bộ ảnh đại diện Gmail:", err);
-    }
-  };
-
   // Xử lý paste ảnh từ clipboard
   const handleImagePaste = (e) => {
     const items = e.clipboardData?.items;
@@ -1999,13 +1979,13 @@ function App() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'block', lineHeight: 1.4 }}>
-                        Chọn Mascot con vật đáng yêu bên dưới hoặc đồng bộ ảnh đại diện từ tài khoản Gmail của bạn.
+                        Chọn Mascot con vật hoạt hình đáng yêu bên dưới để làm ảnh hồ sơ đại diện của bạn.
                       </span>
                     </div>
                   </div>
 
                   {/* Preset Mascots */}
-                  <div style={{ marginBottom: '18px' }}>
+                  <div style={{ marginBottom: '8px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--secondary)', display: 'block', marginBottom: '8px' }}>
                       🦁 Chọn Mascot Hoạt Hình:
                     </span>
@@ -2048,66 +2028,6 @@ function App() {
                         </button>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Gmail Profile avatar selection */}
-                  <div>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--secondary)', display: 'block', marginBottom: '8px' }}>
-                      📧 Ảnh Đại Diện Gmail Của Bạn:
-                    </span>
-                    {currentUser.email && currentUser.email.toLowerCase().endsWith('@gmail.com') ? (
-                      /* Gravatar Sync Button */
-                      <div 
-                        onClick={handleSyncGmailAvatar}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          padding: '12px 16px',
-                          borderRadius: '16px',
-                          border: profileAvatar && profileAvatar.includes('gravatar.com') ? '2.5px solid var(--primary)' : '2.5px solid var(--border)',
-                          backgroundColor: profileAvatar && profileAvatar.includes('gravatar.com') ? 'rgba(224, 122, 95, 0.08)' : 'var(--bg-card)',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: 'var(--shadow)'
-                        }}
-                      >
-                        <div style={{
-                          width: '42px',
-                          height: '42px',
-                          borderRadius: '50%',
-                          overflow: 'hidden',
-                          border: '2px solid var(--border)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: 'white',
-                          flexShrink: 0
-                        }}>
-                          {profileAvatar && profileAvatar.includes('gravatar.com') ? (
-                            <img src={profileAvatar} alt="gmail preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span style={{ fontSize: '22px' }}>👤</span>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                          <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text)' }}>Đồng bộ ảnh từ Gmail</span>
-                          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Tự động lấy ảnh từ tài khoản của bạn</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{
-                        padding: '12px 16px',
-                        borderRadius: '16px',
-                        backgroundColor: 'rgba(140, 98, 57, 0.05)',
-                        border: '1.5px dashed var(--border)',
-                        color: 'var(--text-muted)',
-                        fontSize: '12.5px',
-                        textAlign: 'center'
-                      }}>
-                        ⚠️ Tính năng đồng bộ chỉ khả dụng khi tài khoản sử dụng đuôi <strong>@gmail.com</strong>
-                      </div>
-                    )}
                   </div>
                 </div>
 
