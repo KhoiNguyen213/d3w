@@ -4,44 +4,44 @@
 
 /* Warm Light Mode */
 :root {
-  --primary: #E07A5F;        /* Cam sữa đất ấm áp */
-  --primary-hover: #C5654C;
-  --primary-rgb: 224, 122, 95;
-  --secondary: #3D5A80;      /* Xanh biển sâu dịu nhẹ */
-  --secondary-hover: #2E4562;
-  --accent: #81B29A;         /* Xanh lá xô thơm thanh bình */
-  --accent-light: rgba(129, 178, 154, 0.15);
-  --accent-warm: #F4F1DE;    /* Màu kem nhạt ấm */
-  --bg: #FDFBF7;             /* Màu nền sữa ấm */
-  --card-bg: #FFFFFF;        /* Nền thẻ */
-  --text-main: #3E3B39;      /* Chữ chính màu than ấm */
-  --text-muted: #8E8782;     /* Chữ phụ */
-  --border: #F1ECE3;         /* Đường viền kem mịn */
-  --shadow: 0 10px 30px rgba(224, 122, 95, 0.05);
-  --shadow-active: 0 16px 40px rgba(224, 122, 95, 0.1);
+  --primary: #8C6239;        /* Nâu caramel đất ấm áp, dễ mến */
+  --primary-hover: #6E4A27;
+  --primary-rgb: 140, 98, 57;
+  --secondary: #5C3D2E;      /* Nâu Espresso đậm đà, vững chãi */
+  --secondary-hover: #472F23;
+  --accent: #D4A373;         /* Vàng be mật ong sáng */
+  --accent-light: rgba(212, 163, 115, 0.15);
+  --accent-warm: #FEFAE0;    /* Be kem sữa ngọt ngào */
+  --bg: #FAEDCD;             /* Nền be sữa ấm cúng */
+  --card-bg: #FEFDF9;        /* Nền thẻ màu trắng kem mịn */
+  --text-main: #3D2D23;      /* Chữ nâu gỗ tối */
+  --text-muted: #8E7A6B;     /* Chữ nâu đất nhạt nhẹ dịu */
+  --border: #EADCB9;         /* Đường viền be sữa nhạt tinh tế */
+  --shadow: 0 10px 30px rgba(140, 98, 57, 0.04);
+  --shadow-active: 0 16px 40px rgba(140, 98, 57, 0.08);
   --radius: 20px;
   --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   --font-sans: 'Inter', sans-serif;
   --font-heading: 'Outfit', sans-serif;
 }
 
-/* Warm Dark Mode */
+/* Warm Dark Mode (Nâu Chocolate ấm, cực kỳ êm dịu ban đêm) */
 [data-theme="dark"] {
-  --primary: #F28482;        /* Hồng cam ấm dịu */
-  --primary-hover: #E07A5F;
-  --primary-rgb: 242, 132, 130;
-  --secondary: #98C1D9;      /* Xanh pastel dịu mắt */
-  --secondary-hover: #7EA9C3;
-  --accent: #81B29A;
-  --accent-light: rgba(129, 178, 154, 0.2);
-  --accent-warm: #2B2D42;    /* Nền phụ tối */
-  --bg: #1A1817;             /* Đen nâu trầm ấm */
-  --card-bg: #262220;        /* Nâu đen ấm áp */
-  --text-main: #F4F1DE;      /* Màu kem nhạt */
-  --text-muted: #AFA69E;
-  --border: #3A3532;
-  --shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
-  --shadow-active: 0 16px 45px rgba(0, 0, 0, 0.45);
+  --primary: #D4A373;        /* Vàng be mật ong sáng ấm */
+  --primary-hover: #FAEDCD;
+  --primary-rgb: 212, 163, 115;
+  --secondary: #EADCB9;      /* Màu be sữa sáng vững vàng */
+  --secondary-hover: #FEFAE0;
+  --accent: #A3B18A;         /* Xanh xô thơm trầm ấm bình yên */
+  --accent-light: rgba(163, 177, 138, 0.2);
+  --accent-warm: #3D2D23;    /* Nâu gỗ ấm nền phụ */
+  --bg: #1F1813;             /* Đen nâu Espresso trầm ấm tối thượng */
+  --card-bg: #2C201A;        /* Nâu chocolate đen bóng đêm */
+  --text-main: #FAEDCD;      /* Chữ màu be sữa sáng dịu */
+  --text-muted: #A89585;     /* Chữ nâu be trầm nhẹ */
+  --border: #423229;         /* Đường viền gỗ tối */
+  --shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+  --shadow-active: 0 16px 45px rgba(0, 0, 0, 0.55);
 }
 
 /* Reset và định dạng cơ bản */
@@ -54,7 +54,7 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: #EFECE6; /* Warm latte canvas background for desktop view */
+  background-color: #E3D5CA; /* Soft warm cashmere linen canvas background for desktop view */
   color: var(--text-main);
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
