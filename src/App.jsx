@@ -156,6 +156,10 @@ function App() {
   const [activeRoom, setActiveRoom] = useState(null);
   const [savedRoomIds, setSavedRoomIds] = useState([]);
   
+  // Trạng thái xem/che mật khẩu cho phòng
+  const [showCreateRoomPass, setShowCreateRoomPass] = useState(false);
+  const [showJoinRoomPass, setShowJoinRoomPass] = useState(false);
+
   // Form tạo phòng
   const [createRoomName, setCreateRoomName] = useState('');
   const [createRoomPass, setCreateRoomPass] = useState('');
@@ -1150,12 +1154,34 @@ function App() {
 
                       <div className="form-group">
                         <label>Mật Khẩu Phòng (để bảo mật tối đa)</label>
-                        <input 
-                          type="password" 
-                          placeholder="Nhập mật khẩu tự chọn" 
-                          value={createRoomPass} 
-                          onChange={(e) => setCreateRoomPass(e.target.value)}
-                        />
+                        <div style={{ position: 'relative' }}>
+                          <input 
+                            type={showCreateRoomPass ? "text" : "password"} 
+                            placeholder="Nhập mật khẩu tự chọn" 
+                            value={createRoomPass} 
+                            onChange={(e) => setCreateRoomPass(e.target.value)}
+                            style={{ paddingRight: '48px' }}
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setShowCreateRoomPass(!showCreateRoomPass)}
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              fontSize: '18px',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              lineHeight: 1
+                            }}
+                            title={showCreateRoomPass ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                          >
+                            {showCreateRoomPass ? '👁️' : '🙈'}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="form-group">
@@ -1211,18 +1237,47 @@ function App() {
                           type="text" 
                           placeholder="VD: HN-8392" 
                           value={joinRoomId} 
-                          onChange={(e) => setJoinRoomId(e.target.value)}
+                          onChange={(e) => {
+                            let val = e.target.value;
+                            // Tự động loại bỏ dấu cách cuối cùng nếu không có ký tự phía sau
+                            if (val.endsWith(' ')) {
+                              val = val.trimEnd();
+                            }
+                            setJoinRoomId(val);
+                          }}
                         />
                       </div>
 
                       <div className="form-group">
                         <label>Mật Khẩu Phòng</label>
-                        <input 
-                          type="password" 
-                          placeholder="Nhập mật khẩu phòng" 
-                          value={joinRoomPass} 
-                          onChange={(e) => setJoinRoomPass(e.target.value)}
-                        />
+                        <div style={{ position: 'relative' }}>
+                          <input 
+                            type={showJoinRoomPass ? "text" : "password"} 
+                            placeholder="Nhập mật khẩu phòng" 
+                            value={joinRoomPass} 
+                            onChange={(e) => setJoinRoomPass(e.target.value)}
+                            style={{ paddingRight: '48px' }}
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => setShowJoinRoomPass(!showJoinRoomPass)}
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              fontSize: '18px',
+                              cursor: 'pointer',
+                              padding: '4px',
+                              lineHeight: 1
+                            }}
+                            title={showJoinRoomPass ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                          >
+                            {showJoinRoomPass ? '👁️' : '🙈'}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="form-group">
