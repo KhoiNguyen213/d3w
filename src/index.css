@@ -64,6 +64,8 @@ body {
   align-items: flex-start;
   min-height: 100vh;
   padding-bottom: 90px !important; /* Global padding-bottom to prevent mobile bottom-nav overlap */
+  font-size: 16.5px; /* Larger baseline text size */
+  font-weight: 550;  /* Bolder text weight for maximum legibility */
 }
 
 [data-theme="dark"] body {
@@ -105,9 +107,10 @@ body {
 /* Typography */
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
-  font-weight: 700;
+  font-weight: 800; /* Extra bold headings */
   color: var(--secondary);
   line-height: 1.25;
+  letter-spacing: -0.5px; /* Tight, premium font feel */
 }
 
 [data-theme="dark"] h1, 
@@ -228,10 +231,10 @@ header {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 24px;
+  padding: 14px 28px; /* Taller, easy-to-tap button size */
   border-radius: var(--radius);
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 800; /* Extra bold buttons */
+  font-size: 16px; /* Larger text */
   cursor: pointer;
   transition: var(--transition);
   border: none;
@@ -355,20 +358,21 @@ header {
 
 .comfort-banner p {
   font-family: var(--font-heading);
-  font-size: 17px;
+  font-size: 19px;
   font-style: italic;
-  font-weight: 500;
+  font-weight: 700; /* Bolder comforting quote */
   color: var(--text-main);
   position: relative;
   z-index: 1;
+  line-height: 1.4;
 }
 
 .comfort-banner span {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--primary);
-  margin-top: 8px;
-  font-weight: 600;
+  margin-top: 10px;
+  font-weight: 800; /* Bolder quote author */
   letter-spacing: 1px;
 }
 
@@ -381,8 +385,8 @@ header {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 750; /* Extra bold label text */
+  font-size: 15.5px; /* Larger label size */
   color: var(--text-main);
 }
 
@@ -390,12 +394,13 @@ header {
 .form-group select, 
 .form-group textarea {
   width: 100%;
-  padding: 14px 18px;
-  border-radius: var(--radius);
-  border: 1.5px solid var(--border);
+  padding: 15px 18px;
+  border-radius: 14px; /* Stylish modern border-radius */
+  border: 2px solid var(--border); /* Slightly thicker border for robust alignment */
   background: var(--card-bg);
   color: var(--text-main);
-  font-size: 15px;
+  font-size: 16px; /* Larger and easily readable text size on phones */
+  font-weight: 600; /* Bolder input values */
   font-family: var(--font-sans);
   transition: var(--transition);
 }
@@ -682,13 +687,13 @@ main {
 
 .preset-question-btn {
   width: 100%;
-  padding: 14px;
+  padding: 14px 16px;
   border-radius: 12px;
-  border: 1.5px solid var(--border);
+  border: 2px solid var(--border);
   background-color: var(--card-bg);
   text-align: left;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15.5px;
+  font-weight: 750; /* Extremely bold, modern suggestions */
   color: var(--text-main);
   cursor: pointer;
   transition: var(--transition);
@@ -792,8 +797,9 @@ main {
 }
 
 .added-q-text {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15.5px;
+  font-weight: 750; /* Bolder added questions list text */
+  color: var(--text-main);
 }
 
 .btn-remove-q {
@@ -824,12 +830,12 @@ main {
 
 /* Phase 2: Combined Test answering screen */
 .test-box-main {
-  max-width: 680px;
+  max-width: 100%;
   margin: 0 auto;
   background-color: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
-  padding: 36px;
+  padding: 24px 18px; /* Compact mobile padding to align nicely */
   box-shadow: var(--shadow);
 }
 
@@ -849,9 +855,10 @@ main {
 }
 
 .q-display-heading {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 24px;
+  font-size: 22px;
+  font-weight: 800; /* Extra bold question text */
+  margin-bottom: 20px;
+  color: var(--secondary);
 }
 
 .emotion-select-row {
