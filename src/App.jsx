@@ -841,7 +841,7 @@ function App() {
                 <div className="avatar-circle" style={{ backgroundColor: currentUser.avatarColor }}>
                   <span className="avatar-img-sim">{currentUser.mascot}</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div className="user-avatar-text" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '13px', fontWeight: '700', lineHeight: 1.1 }}>{currentUser.name}</span>
                   <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{currentUser.mascotName}</span>
                 </div>
@@ -2026,6 +2026,30 @@ function App() {
         )}
 
       </main>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className="mobile-bottom-nav">
+        <a className={`mobile-nav-item ${currentView === 'home' ? 'active' : ''}`} onClick={() => navigateTo('home')}>
+          <span className="mobile-nav-icon">🏠</span>
+          <span className="mobile-nav-text">Trang Chủ</span>
+        </a>
+        <a className={`mobile-nav-item ${currentView === 'mechanism' ? 'active' : ''}`} onClick={() => navigateTo('mechanism')}>
+          <span className="mobile-nav-icon">⚙️</span>
+          <span className="mobile-nav-text">Cơ Chế</span>
+        </a>
+        <a className={`mobile-nav-item ${currentView === 'ai-info' ? 'active' : ''}`} onClick={() => navigateTo('ai-info')}>
+          <span className="mobile-nav-icon">🤖</span>
+          <span className="mobile-nav-text">Tích Hợp AI</span>
+        </a>
+        <a className={`mobile-nav-item ${currentView === 'about' ? 'active' : ''}`} onClick={() => navigateTo('about')}>
+          <span className="mobile-nav-icon">👥</span>
+          <span className="mobile-nav-text">Về Chúng Tôi</span>
+        </a>
+        <a className={`mobile-nav-item ${currentView === 'contact' ? 'active' : ''}`} onClick={() => navigateTo('contact')}>
+          <span className="mobile-nav-icon">📞</span>
+          <span className="mobile-nav-text">Liên Hệ</span>
+        </a>
+      </nav>
 
       {/* FOOTER WARM AND LOVING */}
       <footer>
