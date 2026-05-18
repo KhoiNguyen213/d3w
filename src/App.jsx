@@ -114,7 +114,7 @@ function App() {
   // --- STATE QUẢN LÝ APP CHÍNH ---
   const [theme, setTheme] = useState('light');
   const [currentView, setCurrentView] = useState('home'); // 'home' | 'mechanism' | 'ai-info' | 'about' | 'contact' | 'login' | 'register' | 'room'
-  
+
   // --- STATE AUTHENTICATION ---
   const [currentUser, setCurrentUser] = useState(null);
   const [loginEmail, setLoginEmail] = useState('');
@@ -158,7 +158,7 @@ function App() {
   const [savedConclusions, setSavedConclusions] = useState([]);
   const [activeViewedConclusion, setActiveViewedConclusion] = useState(null);
   const [activeReviewAdvice, setActiveReviewAdvice] = useState('<p>Đang chờ tải dữ liệu AI...</p>');
-  
+
   // Trạng thái xem/che mật khẩu cho phòng
   const [showCreateRoomPass, setShowCreateRoomPass] = useState(false);
   const [showJoinRoomPass, setShowJoinRoomPass] = useState(false);
@@ -213,7 +213,7 @@ function App() {
         const childAnswer = activeRoom.creatorRole === 'child' ? activeRoom.answers.creator[revIdx] : activeRoom.answers.joiner[revIdx];
 
         try {
-          const response = await fetch('http://localhost:5000/api/analyze-understanding', {
+          const response = await fetch('https://d3w.onrender.com/api/analyze-understanding', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -295,7 +295,7 @@ function App() {
     if (storedRooms) {
       const parsedRooms = JSON.parse(storedRooms);
       setRooms(parsedRooms);
-      
+
       // Đồng bộ phòng hiện tại nếu đang trong phòng
       const activeRoomId = localStorage.getItem('HN_active_room_id');
       if (activeRoomId) {
@@ -366,7 +366,7 @@ function App() {
 
     // Đọc danh sách tài khoản đã có
     const users = JSON.parse(localStorage.getItem('HN_registered_users') || '[]');
-    
+
     // Kiểm tra xem email đã được đăng ký chưa
     const exists = users.some(u => u.email.toLowerCase() === regEmail.toLowerCase());
     if (exists) {
@@ -402,10 +402,10 @@ function App() {
 
     // Đọc danh sách tài khoản
     const users = JSON.parse(localStorage.getItem('HN_registered_users') || '[]');
-    
+
     // Xác minh tài khoản
     const userFound = users.find(u => u.email.toLowerCase() === loginEmail.toLowerCase() && u.password === loginPassword);
-    
+
     if (!userFound) {
       setAuthError('Tài khoản hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
       return;
@@ -424,7 +424,7 @@ function App() {
 
     setCurrentUser(loggedInUser);
     localStorage.setItem('HN_current_user', JSON.stringify(loggedInUser));
-    
+
     setLoginEmail('');
     setLoginPassword('');
     navigateTo('home');
@@ -433,7 +433,7 @@ function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('HN_current_user');
-    
+
     // Thoát phòng nếu đang ở trong
     if (activeRoom) {
       handleLeaveRoom();
@@ -526,7 +526,7 @@ function App() {
   const updateRoomsInStorage = (updatedRooms) => {
     setRooms(updatedRooms);
     localStorage.setItem('HN_rooms', JSON.stringify(updatedRooms));
-    
+
     if (activeRoom) {
       const currentActive = updatedRooms.find(r => r.id === activeRoom.id);
       if (currentActive) {
@@ -575,7 +575,7 @@ function App() {
       name: createRoomName,
       password: createRoomPass,
       status: 'waiting', // 'waiting' | 'quiz' | 'review' | 'completed'
-      
+
       // Thành viên khởi tạo
       creatorName: createCreatorName,
       creatorRole: createCreatorRole,
@@ -615,7 +615,7 @@ function App() {
     setCreateRoomName('');
     setCreateRoomPass('');
     setCreateCreatorName('');
-    
+
     navigateTo('room');
   };
 
@@ -734,7 +734,7 @@ function App() {
 
     // Kiểm tra xem đã lưu kết luận của phòng này chưa
     const existingIndex = savedConclusions.findIndex(c => c.roomId === room.id && c.userEmail === currentUser.email.toLowerCase());
-    
+
     let updated;
     if (existingIndex !== -1) {
       // Ghi đè báo cáo mới nhất
@@ -764,7 +764,7 @@ function App() {
     // Xác định vai trò đã từng lưu của phòng này hoặc hỏi
     const prevRole = sessionStorage.getItem(`HN_room_role_${room.id}`);
     const prevUsername = sessionStorage.getItem(`HN_room_username_${room.id}`);
-    
+
     if (prevRole && prevUsername) {
       localStorage.setItem('HN_active_room_id', room.id);
       setActiveRoom(room);
@@ -872,7 +872,7 @@ function App() {
             ...nextRoomState.creatorQuestions.map(q => ({ text: q, creator: nextRoomState.creatorRole })),
             ...nextRoomState.joinerQuestions.map(q => ({ text: q, creator: nextRoomState.joinerRole }))
           ];
-          
+
           return {
             ...nextRoomState,
             status: 'quiz',
@@ -900,7 +900,7 @@ function App() {
     const updatedRooms = rooms.map(r => {
       if (r.id === activeRoom.id) {
         const nextAnswers = { ...r.answers };
-        
+
         if (myRole === 'creator') {
           nextAnswers.creator = {
             ...nextAnswers.creator,
@@ -985,7 +985,7 @@ function App() {
   const handleContactSubmit = (e) => {
     e.preventDefault();
     if (!contactName || !contactEmail || !contactMsg) return;
-    
+
     setContactSuccess('Lời nhắn của bạn đã được gửi đi bằng cả sự trân trọng. Chúng tôi sẽ phản hồi lại bạn sớm nhất qua email!');
     setContactName('');
     setContactEmail('');
@@ -1019,19 +1019,19 @@ function App() {
     if (!email) return 'https://lh3.googleusercontent.com/a/default-user=s120-c';
     const cleanEmail = email.trim().toLowerCase();
     const firstChar = name ? name.charAt(0).toUpperCase() : cleanEmail.charAt(0).toUpperCase();
-    
+
     // Tự động phân phối màu sắc Google dựa trên mã ký tự
     const charCode = firstChar.charCodeAt(0);
     const googleColors = ['4285F4', 'EA4335', 'FBBC05', '34A853']; // Google blue, red, yellow, green
     const bgColor = googleColors[charCode % googleColors.length];
-    
+
     return `https://ui-avatars.com/api/?name=${firstChar}&background=${bgColor}&color=fff&size=128&bold=true`;
   };
 
   // Tính toán chỉ số thấu hiểu giả lập dựa trên khớp cảm xúc tương đồng
   const calculateUnderstandingScore = (room) => {
     if (!room || !room.compiledQuestions) return 70;
-    
+
     let matches = 0;
     const total = room.compiledQuestions.length;
     if (total === 0) return 70;
@@ -1039,17 +1039,17 @@ function App() {
     for (let i = 0; i < total; i++) {
       const cEmo = room.answers.creator[i]?.emotion;
       const jEmo = room.answers.joiner[i]?.emotion;
-      
+
       // Nếu cùng cảm xúc hoặc cả hai đều có cảm xúc tích cực/hy vọng
       if (cEmo === jEmo) {
         matches += 1.0;
       } else if (
-        (cEmo === 'hopeful' && jEmo === 'happy') || 
+        (cEmo === 'hopeful' && jEmo === 'happy') ||
         (cEmo === 'happy' && jEmo === 'hopeful')
       ) {
         matches += 0.8;
       } else if (
-        (cEmo === 'anxious' && jEmo === 'stressed') || 
+        (cEmo === 'anxious' && jEmo === 'stressed') ||
         (cEmo === 'stressed' && jEmo === 'anxious')
       ) {
         matches += 0.5; // Sự thấu cảm trong nỗi lo
@@ -1102,9 +1102,9 @@ function App() {
 
             {/* Trạng thái Đăng nhập với Mascot hoạt hình ngộ nghĩnh */}
             {currentUser ? (
-              <div 
-                className="user-avatar-badge" 
-                onClick={() => navigateTo('profile')} 
+              <div
+                className="user-avatar-badge"
+                onClick={() => navigateTo('profile')}
                 style={{ cursor: 'pointer' }}
                 title="Quản lý tài khoản"
               >
@@ -1160,9 +1160,9 @@ function App() {
                 </div>
               </div>
               <div className="hero-illustration">
-                <img 
-                  src="/hero-cozy.png" 
-                  alt="Không gian gia đình ấm áp thấu cảm" 
+                <img
+                  src="/hero-cozy.png"
+                  alt="Không gian gia đình ấm áp thấu cảm"
                   className="hero-card-illus"
                   style={{
                     width: '100%',
@@ -1260,14 +1260,14 @@ function App() {
                     <p className="card-desc" style={{ marginBottom: '20px' }}>
                       Khởi tạo phòng thấu hiểu riêng tư. Bạn sẽ là người đầu tiên soạn thảo các câu hỏi và đợi người thân tham gia đối thoại.
                     </p>
-                    
+
                     <form onSubmit={handleCreateRoom}>
                       <div className="form-group">
                         <label>Tên Phòng Kết Nối</label>
-                        <input 
-                          type="text" 
-                          placeholder="VD: Gia đình thân thương, Bố Mẹ và Tôm..." 
-                          value={createRoomName} 
+                        <input
+                          type="text"
+                          placeholder="VD: Gia đình thân thương, Bố Mẹ và Tôm..."
+                          value={createRoomName}
                           onChange={(e) => setCreateRoomName(e.target.value)}
                         />
                       </div>
@@ -1275,15 +1275,15 @@ function App() {
                       <div className="form-group">
                         <label>Mật Khẩu Phòng (để bảo mật tối đa)</label>
                         <div style={{ position: 'relative' }}>
-                          <input 
-                            type={showCreateRoomPass ? "text" : "password"} 
-                            placeholder="Nhập mật khẩu tự chọn" 
-                            value={createRoomPass} 
+                          <input
+                            type={showCreateRoomPass ? "text" : "password"}
+                            placeholder="Nhập mật khẩu tự chọn"
+                            value={createRoomPass}
                             onChange={(e) => setCreateRoomPass(e.target.value)}
                             style={{ paddingRight: '48px' }}
                           />
-                          <button 
-                            type="button" 
+                          <button
+                            type="button"
                             onClick={() => setShowCreateRoomPass(!showCreateRoomPass)}
                             style={{
                               position: 'absolute',
@@ -1306,10 +1306,10 @@ function App() {
 
                       <div className="form-group">
                         <label>Tên Hiển Thị Của Bạn</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder={currentUser ? `Mặc định: ${currentUser.name}` : "VD: Bố Tuấn, Mẹ Hà, Con gái Linh..."}
-                          value={createCreatorName} 
+                          value={createCreatorName}
                           onChange={(e) => setCreateCreatorName(e.target.value)}
                         />
                       </div>
@@ -1317,14 +1317,14 @@ function App() {
                       <div className="form-group">
                         <label>Vai Trò Của Bạn Trong Phòng</label>
                         <div className="role-picker">
-                          <div 
+                          <div
                             className={`role-card-opt ${createCreatorRole === 'parent' ? 'selected' : ''}`}
                             onClick={() => setCreateCreatorRole('parent')}
                           >
                             <span className="role-icon-sim">🐻</span>
                             <span className="role-title-sim">Cha Mẹ</span>
                           </div>
-                          <div 
+                          <div
                             className={`role-card-opt ${createCreatorRole === 'child' ? 'selected' : ''}`}
                             onClick={() => setCreateCreatorRole('child')}
                           >
@@ -1353,10 +1353,10 @@ function App() {
                     <form onSubmit={handleJoinRoom}>
                       <div className="form-group">
                         <label>Mã ID Phòng Kết Nối</label>
-                        <input 
-                          type="text" 
-                          placeholder="VD: HN-8392" 
-                          value={joinRoomId} 
+                        <input
+                          type="text"
+                          placeholder="VD: HN-8392"
+                          value={joinRoomId}
                           onChange={(e) => {
                             let val = e.target.value;
                             // Tự động loại bỏ dấu cách cuối cùng nếu không có ký tự phía sau
@@ -1371,15 +1371,15 @@ function App() {
                       <div className="form-group">
                         <label>Mật Khẩu Phòng</label>
                         <div style={{ position: 'relative' }}>
-                          <input 
-                            type={showJoinRoomPass ? "text" : "password"} 
-                            placeholder="Nhập mật khẩu phòng" 
-                            value={joinRoomPass} 
+                          <input
+                            type={showJoinRoomPass ? "text" : "password"}
+                            placeholder="Nhập mật khẩu phòng"
+                            value={joinRoomPass}
                             onChange={(e) => setJoinRoomPass(e.target.value)}
                             style={{ paddingRight: '48px' }}
                           />
-                          <button 
-                            type="button" 
+                          <button
+                            type="button"
                             onClick={() => setShowJoinRoomPass(!showJoinRoomPass)}
                             style={{
                               position: 'absolute',
@@ -1402,10 +1402,10 @@ function App() {
 
                       <div className="form-group">
                         <label>Tên Hiển Thị Của Bạn</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder={currentUser ? `Mặc định: ${currentUser.name}` : "VD: Bố Lâm, Con trai Minh..."}
-                          value={joinUserName} 
+                          value={joinUserName}
                           onChange={(e) => setJoinUserName(e.target.value)}
                         />
                       </div>
@@ -1413,14 +1413,14 @@ function App() {
                       <div className="form-group">
                         <label>Vai Trò Bạn Muốn Tham Gia</label>
                         <div className="role-picker">
-                          <div 
+                          <div
                             className={`role-card-opt ${joinUserRole === 'parent' ? 'selected' : ''}`}
                             onClick={() => setJoinUserRole('parent')}
                           >
                             <span className="role-icon-sim">🐻</span>
                             <span className="role-title-sim">Cha Mẹ</span>
                           </div>
-                          <div 
+                          <div
                             className={`role-card-opt ${joinUserRole === 'child' ? 'selected' : ''}`}
                             onClick={() => setJoinUserRole('child')}
                           >
@@ -1457,17 +1457,17 @@ function App() {
                               <span className="room-meta-name">{r.name}</span>
                               <span className="room-meta-details">ID: {r.id} | Trạng thái: {
                                 r.status === 'waiting' ? 'Đang đợi kết nối' :
-                                r.status === 'quiz' ? 'Làm bài kiểm tra' :
-                                r.status === 'review' ? 'AI đang nhận xét' : 'Đã hoàn thành'
+                                  r.status === 'quiz' ? 'Làm bài kiểm tra' :
+                                    r.status === 'review' ? 'AI đang nhận xét' : 'Đã hoàn thành'
                               }</span>
                             </div>
                             <div style={{ display: 'flex', gap: '8px' }}>
                               <button className="btn btn-secondary btn-sm" onClick={() => handleQuickJoinSavedRoom(r)}>
                                 Kết Nối
                               </button>
-                              <button 
-                                className="btn btn-outline btn-sm" 
-                                onClick={() => toggleBookmarkRoom(r.id)} 
+                              <button
+                                className="btn btn-outline btn-sm"
+                                onClick={() => toggleBookmarkRoom(r.id)}
                                 style={{ padding: '8px', minWidth: '36px' }}
                                 title="Xóa khỏi danh sách lưu"
                               >
@@ -1619,15 +1619,15 @@ function App() {
 
                   <div className="form-group">
                     <label>Câu Trả Lời Giả Lập Của Cha Mẹ</label>
-                    <textarea 
-                      rows="3" 
-                      value={sandboxParentAns} 
+                    <textarea
+                      rows="3"
+                      value={sandboxParentAns}
                       onChange={(e) => setSandboxParentAns(e.target.value)}
                     ></textarea>
                     <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Cảm xúc:</span>
                       {['happy', 'anxious', 'hopeful', 'stressed'].map(emo => (
-                        <button 
+                        <button
                           className={`btn btn-secondary btn-sm ${sandboxParentEmo === emo ? 'btn-primary' : ''}`}
                           onClick={() => setSandboxParentEmo(emo)}
                           key={emo}
@@ -1642,15 +1642,15 @@ function App() {
 
                   <div className="form-group">
                     <label>Câu Trả Lời Giả Lập Của Con Cái</label>
-                    <textarea 
-                      rows="3" 
-                      value={sandboxChildAns} 
+                    <textarea
+                      rows="3"
+                      value={sandboxChildAns}
                       onChange={(e) => setSandboxChildAns(e.target.value)}
                     ></textarea>
                     <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Cảm xúc:</span>
                       {['happy', 'anxious', 'hopeful', 'stressed'].map(emo => (
-                        <button 
+                        <button
                           className={`btn btn-secondary btn-sm ${sandboxChildEmo === emo ? 'btn-primary' : ''}`}
                           onClick={() => setSandboxChildEmo(emo)}
                           key={emo}
@@ -1673,8 +1673,8 @@ function App() {
                   <span style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>
                     Kết quả tư vấn từ AI:
                   </span>
-                  <div 
-                    className="ai-advice-wrapper" 
+                  <div
+                    className="ai-advice-wrapper"
                     style={{ flex: 1, margin: 0, overflowY: 'auto', border: '1.5px solid var(--accent)' }}
                     dangerouslySetInnerHTML={{ __html: sandboxResult }}
                   />
@@ -1749,9 +1749,9 @@ function App() {
               <form onSubmit={handleContactSubmit}>
                 <div className="form-group">
                   <label>Tên của bạn</label>
-                  <input 
-                    type="text" 
-                    placeholder="Nhập tên hiển thị" 
+                  <input
+                    type="text"
+                    placeholder="Nhập tên hiển thị"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     required
@@ -1760,9 +1760,9 @@ function App() {
 
                 <div className="form-group">
                   <label>Địa chỉ Email của bạn</label>
-                  <input 
-                    type="email" 
-                    placeholder="VD: name@example.com" 
+                  <input
+                    type="email"
+                    placeholder="VD: name@example.com"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     required
@@ -1771,9 +1771,9 @@ function App() {
 
                 <div className="form-group">
                   <label>Lời nhắn / Chia sẻ tâm sự</label>
-                  <textarea 
-                    rows="5" 
-                    placeholder="Nhập nội dung chia sẻ hoặc thắc mắc của bạn..." 
+                  <textarea
+                    rows="5"
+                    placeholder="Nhập nội dung chia sẻ hoặc thắc mắc của bạn..."
                     value={contactMsg}
                     onChange={(e) => setContactMsg(e.target.value)}
                     required
@@ -1808,9 +1808,9 @@ function App() {
               <form onSubmit={handleLogin}>
                 <div className="form-group">
                   <label>Địa chỉ Email</label>
-                  <input 
-                    type="email" 
-                    placeholder="VD: name@example.com" 
+                  <input
+                    type="email"
+                    placeholder="VD: name@example.com"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
@@ -1820,16 +1820,16 @@ function App() {
                 <div className="form-group">
                   <label>Mật Khẩu</label>
                   <div style={{ position: 'relative' }}>
-                    <input 
-                      type={showLoginPassword ? "text" : "password"} 
-                      placeholder="Nhập mật khẩu tài khoản" 
+                    <input
+                      type={showLoginPassword ? "text" : "password"}
+                      placeholder="Nhập mật khẩu tài khoản"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
                       style={{ paddingRight: '48px' }}
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setShowLoginPassword(!showLoginPassword)}
                       style={{
                         position: 'absolute',
@@ -1891,9 +1891,9 @@ function App() {
               <form onSubmit={handleRegister}>
                 <div className="form-group">
                   <label>Họ và Tên</label>
-                  <input 
-                    type="text" 
-                    placeholder="Nhập họ và tên hiển thị" 
+                  <input
+                    type="text"
+                    placeholder="Nhập họ và tên hiển thị"
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
                     required
@@ -1902,9 +1902,9 @@ function App() {
 
                 <div className="form-group">
                   <label>Địa chỉ Email</label>
-                  <input 
-                    type="email" 
-                    placeholder="VD: name@example.com" 
+                  <input
+                    type="email"
+                    placeholder="VD: name@example.com"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     required
@@ -1914,16 +1914,16 @@ function App() {
                 <div className="form-group">
                   <label>Mật Khẩu Mới</label>
                   <div style={{ position: 'relative' }}>
-                    <input 
-                      type={showRegPassword ? "text" : "password"} 
-                      placeholder="Tối thiểu 6 ký tự bảo mật" 
+                    <input
+                      type={showRegPassword ? "text" : "password"}
+                      placeholder="Tối thiểu 6 ký tự bảo mật"
                       value={regPassword}
                       onChange={(e) => setRegPassword(e.target.value)}
                       required
                       style={{ paddingRight: '48px' }}
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setShowRegPassword(!showRegPassword)}
                       style={{
                         position: 'absolute',
@@ -1983,11 +1983,11 @@ function App() {
 
             <div className="card">
               <form onSubmit={handleSaveProfile}>
-                 <div className="form-group">
+                <div className="form-group">
                   <label>Họ và Tên <span style={{ color: 'red' }}>*</span></label>
-                  <input 
-                    type="text" 
-                    placeholder="Nhập họ và tên hiển thị" 
+                  <input
+                    type="text"
+                    placeholder="Nhập họ và tên hiển thị"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
                     required
@@ -1996,7 +1996,7 @@ function App() {
 
                 <div className="form-group" style={{ marginBottom: '24px' }}>
                   <label style={{ fontWeight: '700', display: 'block', marginBottom: '10px' }}>Ảnh Đại Diện Của Bạn</label>
-                  
+
                   {/* Current Avatar Display */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
                     <div style={{
@@ -2075,11 +2075,11 @@ function App() {
 
                 <div className="form-group">
                   <label>Tuổi (Không bắt buộc)</label>
-                  <input 
-                    type="number" 
-                    min="1" 
+                  <input
+                    type="number"
+                    min="1"
                     max="120"
-                    placeholder="VD: 16, 45 (Không bắt buộc)" 
+                    placeholder="VD: 16, 45 (Không bắt buộc)"
                     value={profileAge}
                     onChange={(e) => setProfileAge(e.target.value)}
                   />
@@ -2087,8 +2087,8 @@ function App() {
 
                 <div className="form-group">
                   <label>Giới Tính (Không bắt buộc)</label>
-                  <select 
-                    value={profileGender} 
+                  <select
+                    value={profileGender}
                     onChange={(e) => setProfileGender(e.target.value)}
                   >
                     <option value="">-- Chưa chọn giới tính --</option>
@@ -2100,8 +2100,8 @@ function App() {
 
                 <div className="form-group">
                   <label>Ngày Sinh (Không bắt buộc)</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={profileBirthday}
                     onChange={(e) => setProfileBirthday(e.target.value)}
                   />
@@ -2114,23 +2114,23 @@ function App() {
 
               <hr style={{ border: 'none', borderTop: '2px solid var(--border)', margin: '20px 0' }} />
 
-              <button 
-                type="button" 
-                className="btn" 
+              <button
+                type="button"
+                className="btn"
                 onClick={handleLogout}
-                style={{ 
-                  width: '100%', 
-                  backgroundColor: '#E63946', 
-                  color: 'white', 
-                  marginBottom: '14px' 
+                style={{
+                  width: '100%',
+                  backgroundColor: '#E63946',
+                  color: 'white',
+                  marginBottom: '14px'
                 }}
               >
                 🚪 Đăng Xuất Tài Khoản
               </button>
 
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
+              <button
+                type="button"
+                className="btn btn-secondary"
                 onClick={() => navigateTo('home')}
                 style={{ width: '100%' }}
               >
@@ -2154,7 +2154,7 @@ function App() {
 
             {(() => {
               const mySaved = savedConclusions.filter(c => c.userEmail === currentUser.email.toLowerCase());
-              
+
               if (mySaved.length === 0) {
                 return (
                   <div className="card" style={{ textAlign: 'center', padding: '40px 24px', maxWidth: '500px', margin: '0 auto' }}>
@@ -2237,24 +2237,24 @@ function App() {
 
                       {/* Card Footer Actions */}
                       <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                        <button 
-                          className="btn btn-primary btn-sm" 
+                        <button
+                          className="btn btn-primary btn-sm"
                           onClick={() => setActiveViewedConclusion(c)}
                           style={{ flex: 1, padding: '10px', fontSize: '13px' }}
                         >
                           📖 Xem Chi Tiết
                         </button>
-                        <button 
-                          className="btn btn-sm" 
+                        <button
+                          className="btn btn-sm"
                           onClick={() => {
                             if (window.confirm(`Bạn có chắc chắn muốn xóa báo cáo của phòng "${c.roomName}" khỏi danh mục lưu trữ?`)) {
                               handleDeleteConclusion(c.id);
                             }
                           }}
-                          style={{ 
-                            padding: '10px', 
-                            fontSize: '13px', 
-                            backgroundColor: 'rgba(230, 57, 70, 0.1)', 
+                          style={{
+                            padding: '10px',
+                            fontSize: '13px',
+                            backgroundColor: 'rgba(230, 57, 70, 0.1)',
                             color: '#E63946',
                             border: '1.5px solid rgba(230, 57, 70, 0.2)'
                           }}
@@ -2276,7 +2276,7 @@ function App() {
             ==================================================================== */}
         {currentView === 'room' && activeRoom && (
           <div className="animate-slide">
-            
+
             {/* THÔNG TIN CHUNG VÀ TRẠNG THÁI HIỆN DIỆN CỦA PHÒNG KẾT NỐI */}
             <div className="room-header-status">
               <div className="room-meta-group">
@@ -2320,7 +2320,7 @@ function App() {
             {/* GIAI ĐOẠN 1: BIÊN SOẠN CÂU HỎI */}
             {activeRoom.status === 'waiting' && (
               <div className="q-creation-workspace">
-                
+
                 {/* Khu vực tạo câu hỏi của tab hiện tại */}
                 <div className="card">
                   <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase' }}>Giai đoạn 1</span>
@@ -2330,7 +2330,7 @@ function App() {
                   </p>
 
                   {/* Disable editor if myQuestions are already finished */}
-                  {((getMyRoleInRoom() === 'creator' && activeRoom.creatorFinished) || 
+                  {((getMyRoleInRoom() === 'creator' && activeRoom.creatorFinished) ||
                     (getMyRoleInRoom() === 'joiner' && activeRoom.joinerFinished)) ? (
                     <div style={{ textAlign: 'center', padding: '30px 10px', background: 'var(--accent-warm)', borderRadius: '12px', border: '1.5px dashed var(--accent)' }}>
                       <span style={{ fontSize: '28px' }}>✨</span>
@@ -2345,9 +2345,9 @@ function App() {
                       <div className="form-group">
                         <label>Viết Câu Hỏi Mới Của Bạn</label>
                         <div style={{ display: 'flex', gap: '10px' }}>
-                          <input 
-                            type="text" 
-                            placeholder="Nhập nội dung câu hỏi tại đây..." 
+                          <input
+                            type="text"
+                            placeholder="Nhập nội dung câu hỏi tại đây..."
                             value={newQuestionText}
                             onChange={(e) => setNewQuestionText(e.target.value)}
                           />
@@ -2362,8 +2362,8 @@ function App() {
                         <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>💡 Gợi ý câu hỏi tinh tế từ AI:</span>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                           {PRESET_AI_QUESTIONS.map((q, idx) => (
-                            <button 
-                              className="preset-question-btn" 
+                            <button
+                              className="preset-question-btn"
                               onClick={() => handleSelectPresetQuestion(q)}
                               key={idx}
                             >
@@ -2387,8 +2387,8 @@ function App() {
                           </p>
                         ) : null}
 
-                        <button 
-                          className="btn btn-primary" 
+                        <button
+                          className="btn btn-primary"
                           style={{ width: '100%' }}
                           onClick={handleFinishMyQuestions}
                           disabled={
@@ -2407,12 +2407,12 @@ function App() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div className="card" style={{ flex: 1 }}>
                     <h3 style={{ fontSize: '18px', marginBottom: '12px' }}>Danh Sách Câu Hỏi Đã Tạo</h3>
-                    
+
                     {/* Render questions list of current user role */}
                     {(() => {
                       const myRole = getMyRoleInRoom();
                       const myQuestions = myRole === 'creator' ? activeRoom.creatorQuestions : activeRoom.joinerQuestions;
-                      
+
                       if (myQuestions.length === 0) {
                         return (
                           <p style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '13.5px' }}>
@@ -2427,12 +2427,12 @@ function App() {
                             <div className="added-q-item" key={idx}>
                               <span className="added-q-text">{idx + 1}. {q}</span>
                               {/* Disable remove button if questions editing is locked */}
-                              {!((myRole === 'creator' && activeRoom.creatorFinished) || 
-                                 (myRole === 'joiner' && activeRoom.joinerFinished)) && (
-                                <button className="btn-remove-q" onClick={() => handleRemoveQuestion(idx)}>
-                                  🗑️
-                                </button>
-                              )}
+                              {!((myRole === 'creator' && activeRoom.creatorFinished) ||
+                                (myRole === 'joiner' && activeRoom.joinerFinished)) && (
+                                  <button className="btn-remove-q" onClick={() => handleRemoveQuestion(idx)}>
+                                    🗑️
+                                  </button>
+                                )}
                             </div>
                           ))}
                         </div>
@@ -2514,9 +2514,9 @@ function App() {
                       {/* Answer Input */}
                       <div className="form-group" style={{ marginTop: '20px' }}>
                         <label>Chia sẻ suy nghĩ chân thật của bạn</label>
-                        <textarea 
-                          rows="4" 
-                          placeholder="Hãy bộc bạch suy nghĩ của mình tại đây. Chia sẻ ôn hòa luôn là chìa khóa mở lối yêu thương..." 
+                        <textarea
+                          rows="4"
+                          placeholder="Hãy bộc bạch suy nghĩ của mình tại đây. Chia sẻ ôn hòa luôn là chìa khóa mở lối yêu thương..."
                           value={tempAnswerText}
                           onChange={(e) => setTempAnswerText(e.target.value)}
                         />
@@ -2532,7 +2532,7 @@ function App() {
                             { key: 'anxious', emoji: "🥺", label: "Lo âu" },
                             { key: 'stressed', emoji: "😣", label: "Áp lực" }
                           ].map(item => (
-                            <button 
+                            <button
                               className={`emotion-chip-btn ${tempEmotion === item.key ? 'selected' : ''}`}
                               onClick={() => setTempEmotion(item.key)}
                               key={item.key}
@@ -2546,8 +2546,8 @@ function App() {
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px' }}>
-                        <button 
-                          className="btn btn-secondary" 
+                        <button
+                          className="btn btn-secondary"
                           onClick={() => {
                             if (currentQuestionIndex > 0) {
                               setCurrentQuestionIndex(prev => prev - 1);
@@ -2561,8 +2561,8 @@ function App() {
                         >
                           Quay lại câu trước
                         </button>
-                        <button 
-                          className="btn btn-primary" 
+                        <button
+                          className="btn btn-primary"
                           onClick={handleNextQuizQuestion}
                           disabled={!tempAnswerText.trim()}
                         >
@@ -2609,7 +2609,7 @@ function App() {
 
                       {/* Split Answers Display */}
                       <div className="review-answers-grid">
-                        
+
                         {/* Parent Answer card */}
                         <div className="answer-card-col parent">
                           <span className="answer-header-title">
@@ -2666,7 +2666,7 @@ function App() {
             {/* GIAI ĐOẠN 4: BÁO CÁO TỔNG HỢP CUỐI CÙNG */}
             {activeRoom.status === 'completed' && (
               <div className="container-narrow animate-slide">
-                
+
                 {/* Circular overall empathy score */}
                 <div className="final-score-header">
                   <div className="circular-score-val">
@@ -2681,7 +2681,7 @@ function App() {
 
                 {/* Final advice split */}
                 <div className="final-advice-split">
-                  
+
                   {/* Advice for Parent group */}
                   <div className="final-advice-card parent">
                     <h3 style={{ color: 'var(--secondary)' }}>🐻 Nhóm Thay Đổi Cho Cha Mẹ</h3>
@@ -2808,7 +2808,7 @@ function App() {
             }}>
               ⚠️
             </div>
-            
+
             <h3 style={{
               fontFamily: 'var(--font-heading)',
               fontWeight: 800,
@@ -2818,7 +2818,7 @@ function App() {
             }}>
               {authAlertTitle || "Thông Báo Quan Trọng"}
             </h3>
-            
+
             <p style={{
               fontSize: '15px',
               color: '#5C3D2E',
@@ -2828,7 +2828,7 @@ function App() {
             }}>
               {authAlertMessage}
             </p>
-            
+
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -2836,8 +2836,8 @@ function App() {
             }}>
               {authAlertRedirect ? (
                 <>
-                  <button 
-                    className="btn btn-primary" 
+                  <button
+                    className="btn btn-primary"
                     onClick={() => {
                       setShowAuthAlertModal(false);
                       navigateTo(authAlertRedirect);
@@ -2846,8 +2846,8 @@ function App() {
                   >
                     Đăng Nhập Ngay 🔑
                   </button>
-                  <button 
-                    className="btn btn-secondary" 
+                  <button
+                    className="btn btn-secondary"
                     onClick={() => setShowAuthAlertModal(false)}
                     style={{ width: '100%', fontWeight: '700' }}
                   >
@@ -2855,8 +2855,8 @@ function App() {
                   </button>
                 </>
               ) : (
-                <button 
-                  className="btn btn-primary" 
+                <button
+                  className="btn btn-primary"
                   onClick={() => setShowAuthAlertModal(false)}
                   style={{ width: '100%', fontWeight: '700' }}
                 >
@@ -2897,9 +2897,9 @@ function App() {
             boxShadow: '0 24px 48px rgba(0, 0, 0, 0.4)',
             position: 'relative'
           }} className="animate-slide">
-            
+
             {/* Modal Close Icon */}
-            <button 
+            <button
               onClick={() => setActiveViewedConclusion(null)}
               style={{
                 position: 'absolute',
@@ -2954,7 +2954,7 @@ function App() {
             {activeViewedConclusion.compiledQuestions.map((q, idx) => {
               const parentAns = activeViewedConclusion.creatorRole === 'parent' ? activeViewedConclusion.answers.creator[idx] : activeViewedConclusion.answers.joiner[idx];
               const childAns = activeViewedConclusion.creatorRole === 'child' ? activeViewedConclusion.answers.creator[idx] : activeViewedConclusion.answers.joiner[idx];
-              
+
               const parentName = activeViewedConclusion.creatorRole === 'parent' ? activeViewedConclusion.creatorName : activeViewedConclusion.joinerName;
               const childName = activeViewedConclusion.creatorRole === 'child' ? activeViewedConclusion.creatorName : activeViewedConclusion.joinerName;
 
@@ -2976,10 +2976,10 @@ function App() {
                 }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700' }}>CÂU HỎI {idx + 1}</span>
                   <h4 style={{ fontSize: '15px', margin: '4px 0 12px 0' }}>{q.text}</h4>
-                  
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginBottom: '12px' }}>
                     <div style={{ fontSize: '12.5px', borderLeft: '3px solid var(--secondary)', paddingLeft: '8px' }}>
-                      <strong>🐻 {parentName} (Cha Mẹ):</strong> "{parentAns ? parentAns.text : 'Chưa trả lời'}" 
+                      <strong>🐻 {parentName} (Cha Mẹ):</strong> "{parentAns ? parentAns.text : 'Chưa trả lời'}"
                       {parentAns && <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8 }}>({getEmotionIcon(parentAns.emotion).emoji} {getEmotionIcon(parentAns.emotion).text})</span>}
                     </div>
                     <div style={{ fontSize: '12.5px', borderLeft: '3px solid var(--primary)', paddingLeft: '8px' }}>
@@ -3006,7 +3006,7 @@ function App() {
             <h3 style={{ fontSize: '16px', borderBottom: '2px solid var(--border)', paddingBottom: '8px', marginTop: '24px', marginBottom: '16px', color: 'var(--primary)' }}>
               🌱 Định Hướng Hành Vi Thay Đổi
             </h3>
-            
+
             <div className="final-advice-split" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginBottom: '24px' }}>
               <div className="final-advice-card parent" style={{ margin: 0, padding: '16px' }}>
                 <h4 style={{ color: 'var(--secondary)', margin: '0 0 8px 0' }}>🐻 Nhóm Thay Đổi Cho Cha Mẹ</h4>
