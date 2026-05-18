@@ -1040,7 +1040,7 @@ function App() {
 
           <ul className="nav-links">
             <li><a className={`nav-item ${currentView === 'home' ? 'active' : ''}`} onClick={() => navigateTo('home')}>Trang Chủ</a></li>
-            <li><a className={`nav-item ${currentView === 'mechanism' ? 'active' : ''}`} onClick={() => navigateTo('mechanism')}>Giải Thích Cơ Chế</a></li>
+            <li><a className={`nav-item ${currentView === 'mechanism' ? 'active' : ''}`} onClick={() => navigateTo('mechanism')}>Hướng Dẫn</a></li>
             {currentUser && (
               <li><a className={`nav-item ${currentView === 'saved-conclusions' ? 'active' : ''}`} onClick={() => navigateTo('saved-conclusions')}>Kết Luận Đã Lưu 📖</a></li>
             )}
@@ -1109,11 +1109,8 @@ function App() {
                   "Hiểu Nhau" là không gian an toàn, riêng tư giúp phụ huynh và con cái xích lại gần nhau hơn. Thông qua quy trình thiết kế câu hỏi chung và làm bài kiểm tra hai bên, AI thấu cảm sẽ đưa ra những lời khuyên nhẹ nhàng, không chỉ trích, hàn gắn tình cảm gia đình.
                 </p>
                 <div className="hero-btn-group">
-                  <a className="btn btn-primary" href="#create-room-section" onClick={() => setActiveRoomTab('create')}>
-                    Bắt Đầu Ngay ➜
-                  </a>
-                  <button className="btn btn-secondary" onClick={() => navigateTo('mechanism')}>
-                    Tìm Hiểu Cơ Chế
+                  <button className="btn btn-primary" onClick={() => navigateTo('mechanism')}>
+                    Bắt Đầu Ngay
                   </button>
                 </div>
               </div>
@@ -1449,7 +1446,7 @@ function App() {
         {currentView === 'mechanism' && (
           <div className="container-narrow animate-slide">
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-              <h2 style={{ fontSize: '32px', marginBottom: '12px' }}>Cơ Chế Kết Nối Của "Hiểu Nhau"</h2>
+              <h2 style={{ fontSize: '32px', marginBottom: '12px' }}>Hướng Dẫn Kết Nối Của "Hiểu Nhau"</h2>
               <p style={{ color: 'var(--text-muted)' }}>
                 Quy trình thấu cảm 5 bước được thiết kế bởi các chuyên gia tâm lý học hành vi nhằm giải tỏa áp lực, phá vỡ bức tường im lặng giữa hai thế hệ.
               </p>
@@ -1509,7 +1506,7 @@ function App() {
 
             <div style={{ textAlign: 'center', marginTop: '40px' }}>
               <button className="btn btn-primary" onClick={() => navigateTo('home')}>
-                Đã hiểu cơ chế, Tạo phòng kết nối ngay!
+                Đã xem hướng dẫn, Tạo phòng kết nối ngay!
               </button>
             </div>
           </div>
@@ -1530,9 +1527,9 @@ function App() {
             <div className="features-grid">
               <div className="card">
                 <div className="card-icon" style={{ backgroundColor: 'rgba(129, 178, 154, 0.12)', color: 'var(--accent)' }}>🤝</div>
-                <h3 className="card-title">Nguyên Tắc Không Trách Cứ</h3>
+                <h3 className="card-title">Phân Tích Đưa Ra Lời Khuyên Chân Thành</h3>
                 <p className="card-desc">
-                  AI của chúng tôi không phán xét ai đúng ai sai. AI hiểu rằng cha mẹ muốn bảo vệ con khỏi tổn thương, còn con cái muốn chứng tỏ bản thân tự lập. AI sẽ tìm kiếm động cơ yêu thương phía sau mỗi câu nói để làm dịu xung đột.
+                  AI của chúng tôi phân tích cặn kẽ cảm xúc và hoàn cảnh để đưa ra những lời khuyên chân thành nhất. AI hiểu rằng cha mẹ muốn bảo vệ con khỏi tổn thương, còn con cái muốn chứng tỏ bản thân tự lập. AI sẽ tìm kiếm động cơ yêu thương phía sau mỗi câu nói để làm dịu xung đột.
                 </p>
               </div>
 
@@ -2709,7 +2706,7 @@ function App() {
         </a>
         <a className={`mobile-nav-item ${currentView === 'mechanism' ? 'active' : ''}`} onClick={() => navigateTo('mechanism')}>
           <span className="mobile-nav-icon">⚙️</span>
-          <span className="mobile-nav-text">Cơ Chế</span>
+          <span className="mobile-nav-text">Hướng Dẫn</span>
         </a>
         {currentUser && (
           <a className={`mobile-nav-item ${currentView === 'saved-conclusions' ? 'active' : ''}`} onClick={() => navigateTo('saved-conclusions')}>
