@@ -157,6 +157,7 @@ function App() {
   const [savedRoomIds, setSavedRoomIds] = useState([]);
   const [savedConclusions, setSavedConclusions] = useState([]);
   const [activeViewedConclusion, setActiveViewedConclusion] = useState(null);
+  const [activeReviewAdvice, setActiveReviewAdvice] = useState('<p>Đang chờ tải dữ liệu AI...</p>');
   
   // Trạng thái xem/che mật khẩu cho phòng
   const [showCreateRoomPass, setShowCreateRoomPass] = useState(false);
@@ -200,6 +201,39 @@ function App() {
   // ============================================================================
   // KHỞI TẠO & ĐỒNG BỘ THỜI GIAN THỰC (LOCAL STORAGE EVENT SYNC)
   // ============================================================================
+
+  // Fetch AI advice when entering review mode or changing review question
+  useEffect(() => {
+    const fetchReviewAdvice = async () => {
+      if (activeRoom && activeRoom.status === 'review') {
+        setActiveReviewAdvice('<p>Đang phân tích phản hồi bằng AI RAG...</p>');
+        const revIdx = activeRoom.currentReviewIndex;
+        const activeQ = activeRoom.compiledQuestions[revIdx];
+        const parentAnswer = activeRoom.creatorRole === 'parent' ? activeRoom.answers.creator[revIdx] : activeRoom.answers.joiner[revIdx];
+        const childAnswer = activeRoom.creatorRole === 'child' ? activeRoom.answers.creator[revIdx] : activeRoom.answers.joiner[revIdx];
+
+        try {
+          const response = await fetch('http://localhost:5000/api/analyze-understanding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              question: activeQ.text,
+              parentAns: parentAnswer ? parentAnswer.text : 'Cha mẹ chưa trả lời',
+              parentEmo: parentAnswer ? parentAnswer.emotion : 'hopeful',
+              childAns: childAnswer ? childAnswer.text : 'Con cái chưa trả lời',
+              childEmo: childAnswer ? childAnswer.emotion : 'hopeful'
+            })
+          });
+          const data = await response.json();
+          setActiveReviewAdvice(data.adviceHTML);
+        } catch (e) {
+          console.error(e);
+          setActiveReviewAdvice('<p style="color:red;">Lỗi kết nối Backend (Node.js). Vui lòng kiểm tra server.</p>');
+        }
+      }
+    };
+    fetchReviewAdvice();
+  }, [activeRoom?.status, activeRoom?.currentReviewIndex]);
 
   // Load cấu hình ban đầu
   useEffect(() => {
@@ -958,15 +992,26 @@ function App() {
     setContactMsg('');
   };
 
-  const triggerSandboxAI = () => {
-    const adviceHTML = generateSimulatedAIAdvice(
-      sandboxQuestion,
-      sandboxParentAns,
-      sandboxParentEmo,
-      sandboxChildAns,
-      sandboxChildEmo
-    );
-    setSandboxResult(adviceHTML);
+  const triggerSandboxAI = async () => {
+    setSandboxResult('<p>Đang phân tích bằng hệ thống AI RAG...</p>');
+    try {
+      const response = await fetch('http://localhost:5000/api/analyze-understanding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: sandboxQuestion,
+          parentAns: sandboxParentAns,
+          parentEmo: sandboxParentEmo,
+          childAns: sandboxChildAns,
+          childEmo: sandboxChildEmo
+        })
+      });
+      const data = await response.json();
+      setSandboxResult(data.adviceHTML);
+    } catch (e) {
+      console.error(e);
+      setSandboxResult('<p style="color:red;">Lỗi kết nối Backend. Hãy chắc chắn server Node.js đang chạy ở cổng 5000.</p>');
+    }
   };
 
   // Tạo hình đại diện Google/Gmail đẹp mắt dựa trên ký tự đầu tiên của email/tên
@@ -2544,14 +2589,7 @@ function App() {
                   const parentName = activeRoom.creatorRole === 'parent' ? activeRoom.creatorName : activeRoom.joinerName;
                   const childName = activeRoom.creatorRole === 'child' ? activeRoom.creatorName : activeRoom.joinerName;
 
-                  // Tính toán tư vấn AI ngay lập tức dựa trên đáp án thực tế
-                  const aiAdviceHTML = generateSimulatedAIAdvice(
-                    activeQ.text,
-                    parentAnswer ? parentAnswer.text : 'Cha mẹ chưa trả lời',
-                    parentAnswer ? parentAnswer.emotion : 'hopeful',
-                    childAnswer ? childAnswer.text : 'Con cái chưa trả lời',
-                    childAnswer ? childAnswer.emotion : 'hopeful'
-                  );
+                  // Tư vấn AI được tính toán qua Backend trong useEffect phía trên và lưu vào activeReviewAdvice
 
                   return (
                     <div>
@@ -2611,7 +2649,7 @@ function App() {
                         <div className="ai-advice-header">
                           <span>🌱 LỜI KHUYÊN DỊU MÁT TỪ AI (KHÔNG PHÁN XÉT)</span>
                         </div>
-                        <div className="ai-advice-body" dangerouslySetInnerHTML={{ __html: aiAdviceHTML }} />
+                        <div className="ai-advice-body" dangerouslySetInnerHTML={{ __html: activeReviewAdvice }} />
                       </div>
 
                       <div style={{ textAlign: 'center', marginTop: '30px' }}>
