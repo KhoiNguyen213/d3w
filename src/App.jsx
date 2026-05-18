@@ -209,8 +209,25 @@ function App() {
         setActiveReviewAdvice('<p>Đang phân tích phản hồi bằng AI RAG...</p>');
         const revIdx = activeRoom.currentReviewIndex;
         const activeQ = activeRoom.compiledQuestions[revIdx];
-        const parentAnswer = activeRoom.creatorRole === 'parent' ? activeRoom.answers.creator[revIdx] : activeRoom.answers.joiner[revIdx];
-        const childAnswer = activeRoom.creatorRole === 'child' ? activeRoom.answers.creator[revIdx] : activeRoom.answers.joiner[revIdx];
+        const parents = activeRoom.members.filter(m => m.role === 'parent');
+        const children = activeRoom.members.filter(m => m.role === 'child');
+
+        const parentText = parents.map(p => `[${p.name}]: ${p.answers[revIdx]?.text || 'Chưa trả lời'}`).join(' | ');
+        const childText = children.map(c => `[${c.name}]: ${c.answers[revIdx]?.text || 'Chưa trả lời'}`).join(' | ');
+
+        const getModeEmotion = (members) => {
+          const counts = {};
+          members.forEach(m => {
+            const emo = m.answers[revIdx]?.emotion;
+            if (emo) counts[emo] = (counts[emo] || 0) + 1;
+          });
+          let maxEmo = 'hopeful';
+          let maxCount = 0;
+          for (const [emo, count] of Object.entries(counts)) {
+            if (count > maxCount) { maxCount = count; maxEmo = emo; }
+          }
+          return maxEmo;
+        };
 
         try {
           const response = await fetch('https://d3w.onrender.com/api/analyze-understanding', {
@@ -218,10 +235,10 @@ function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               question: activeQ.text,
-              parentAns: parentAnswer ? parentAnswer.text : 'Cha mẹ chưa trả lời',
-              parentEmo: parentAnswer ? parentAnswer.emotion : 'hopeful',
-              childAns: childAnswer ? childAnswer.text : 'Con cái chưa trả lời',
-              childEmo: childAnswer ? childAnswer.emotion : 'hopeful'
+              parentAns: parentText,
+              parentEmo: getModeEmotion(parents),
+              childAns: childText,
+              childEmo: getModeEmotion(children)
             })
           });
           const data = await response.json();
@@ -576,36 +593,33 @@ function App() {
       password: createRoomPass,
       status: 'waiting', // 'waiting' | 'quiz' | 'review' | 'completed'
 
-      // Thành viên khởi tạo
+      // Quyền làm chủ phòng
       creatorName: createCreatorName,
-      creatorRole: createCreatorRole,
-      creatorFinished: false,
-      creatorQuestions: [],
+      
+      // Danh sách thành viên tham gia phòng
+      members: [
+        {
+          name: createCreatorName,
+          role: createCreatorRole,
+          finished: false,
+          questions: [],
+          answers: {}
+        }
+      ],
 
-      // Thành viên tham gia
-      joinerName: null,
-      joinerRole: null,
-      joinerFinished: false,
-      joinerQuestions: [],
-
-      // Cấu trúc bài kiểm tra & đáp án
+      // Cấu trúc bài kiểm tra chung
       compiledQuestions: [],
-      answers: {
-        creator: {},
-        joiner: {}
-      },
       currentReviewIndex: 0
     };
 
     const updatedRooms = [...rooms, newRoom];
     updateRoomsInStorage(updatedRooms);
 
-    // Vào phòng trực tiếp với tư cách người tạo (creator)
+    // Vào phòng trực tiếp với tư cách người tạo
     localStorage.setItem('HN_active_room_id', newId);
     setActiveRoom(newRoom);
 
-    // Lưu vai trò hiện tại vào session local tab để phân biệt
-    sessionStorage.setItem(`HN_room_role_${newId}`, 'creator');
+    // Lưu username hiện tại vào session local tab để phân biệt
     sessionStorage.setItem(`HN_room_username_${newId}`, createCreatorName);
 
     // Bookmark phòng này
@@ -645,24 +659,23 @@ function App() {
       return;
     }
 
-    // Kiểm tra xem phòng đã đầy chưa
-    if (room.joinerName && room.joinerName !== joinUserName) {
-      setRoomError('Phòng kiểm tra này đã đủ 2 thành viên kết nối.');
-      return;
+    // Kiểm tra xem đã có thành viên nào trùng tên chưa
+    const existingMemberIndex = room.members.findIndex(m => m.name.toLowerCase() === joinUserName.toLowerCase());
+    
+    let updatedRoom = { ...room };
+    if (existingMemberIndex === -1) {
+      // Thêm thành viên mới
+      updatedRoom.members = [
+        ...room.members,
+        {
+          name: joinUserName,
+          role: joinUserRole,
+          finished: false,
+          questions: [],
+          answers: {}
+        }
+      ];
     }
-
-    // Kiểm tra vai trò đối lập phù hợp
-    if (room.creatorRole === joinUserRole) {
-      setRoomError(`Phòng này đã có vai trò ${room.creatorRole === 'parent' ? 'Cha mẹ' : 'Con cái'}. Để thấu hiểu sâu sắc, bạn nên chọn vai trò ngược lại.`);
-      return;
-    }
-
-    // Cập nhật thành viên tham gia (joiner) vào phòng
-    const updatedRoom = {
-      ...room,
-      joinerName: joinUserName,
-      joinerRole: joinUserRole
-    };
 
     const updatedRooms = [...rooms];
     updatedRooms[foundRoomIndex] = updatedRoom;
@@ -671,8 +684,7 @@ function App() {
     localStorage.setItem('HN_active_room_id', room.id);
     setActiveRoom(updatedRoom);
 
-    // Lưu vai trò của tab hiện tại vào sessionStorage
-    sessionStorage.setItem(`HN_room_role_${room.id}`, 'joiner');
+    // Lưu username hiện tại vào session local tab để phân biệt
     sessionStorage.setItem(`HN_room_username_${room.id}`, joinUserName);
 
     // Bookmark phòng này
@@ -723,12 +735,12 @@ function App() {
       userEmail: currentUser.email.toLowerCase(),
       roomName: room.name,
       creatorName: room.creatorName,
-      joinerName: room.joinerName,
-      creatorRole: room.creatorRole,
-      joinerRole: room.creatorRole === 'parent' ? 'child' : 'parent',
+      joinerName: room.members.filter(m => m.name !== room.creatorName).map(m => m.name).join(', ') || 'Nhiều thành viên',
+      creatorRole: room.members.find(m => m.name === room.creatorName)?.role || 'parent',
+      joinerRole: 'mixed',
       score: calculateUnderstandingScore(room),
       savedAt: new Date().toISOString(),
-      answers: room.answers,
+      members: room.members, // Store members directly
       compiledQuestions: room.compiledQuestions
     };
 
@@ -802,20 +814,16 @@ function App() {
   const handleAddQuestion = () => {
     if (!newQuestionText.trim() || !activeRoom) return;
 
-    const myRole = getMyRoleInRoom();
+    const myName = getMyUsernameInRoom();
     const updatedRooms = rooms.map(r => {
       if (r.id === activeRoom.id) {
-        if (myRole === 'creator') {
-          return {
-            ...r,
-            creatorQuestions: [...r.creatorQuestions, newQuestionText.trim()]
-          };
-        } else {
-          return {
-            ...r,
-            joinerQuestions: [...r.joinerQuestions, newQuestionText.trim()]
-          };
-        }
+        const nextMembers = r.members.map(m => {
+          if (m.name === myName) {
+            return { ...m, questions: [...m.questions, newQuestionText.trim()] };
+          }
+          return m;
+        });
+        return { ...r, members: nextMembers };
       }
       return r;
     });
@@ -830,16 +838,17 @@ function App() {
 
   const handleRemoveQuestion = (index) => {
     if (!activeRoom) return;
-    const myRole = getMyRoleInRoom();
+    const myName = getMyUsernameInRoom();
     const updatedRooms = rooms.map(r => {
       if (r.id === activeRoom.id) {
-        if (myRole === 'creator') {
-          const filtered = r.creatorQuestions.filter((_, i) => i !== index);
-          return { ...r, creatorQuestions: filtered };
-        } else {
-          const filtered = r.joinerQuestions.filter((_, i) => i !== index);
-          return { ...r, joinerQuestions: filtered };
-        }
+        const nextMembers = r.members.map(m => {
+          if (m.name === myName) {
+            const filtered = m.questions.filter((_, i) => i !== index);
+            return { ...m, questions: filtered };
+          }
+          return m;
+        });
+        return { ...r, members: nextMembers };
       }
       return r;
     });
@@ -849,43 +858,48 @@ function App() {
   // Bấm Hoàn thành biên soạn câu hỏi của cá nhân
   const handleFinishMyQuestions = () => {
     if (!activeRoom) return;
-    const myRole = getMyRoleInRoom();
+    const myName = getMyUsernameInRoom();
 
     const updatedRooms = rooms.map(r => {
       if (r.id === activeRoom.id) {
-        let update = {};
-        if (myRole === 'creator') {
-          update = { creatorFinished: true };
-        } else {
-          update = { joinerFinished: true };
-        }
-
-        const nextRoomState = { ...r, ...update };
-
-        // Nếu cả hai đều đã bấm hoàn thành -> Gộp câu hỏi và chuyển sang Giai đoạn 2 (quiz)
-        if (
-          (myRole === 'creator' && nextRoomState.joinerFinished) ||
-          (myRole === 'joiner' && nextRoomState.creatorFinished)
-        ) {
-          // Trộn và gộp toàn bộ câu hỏi
-          const merged = [
-            ...nextRoomState.creatorQuestions.map(q => ({ text: q, creator: nextRoomState.creatorRole })),
-            ...nextRoomState.joinerQuestions.map(q => ({ text: q, creator: nextRoomState.joinerRole }))
-          ];
-
-          return {
-            ...nextRoomState,
-            status: 'quiz',
-            compiledQuestions: merged
-          };
-        }
-        return nextRoomState;
+        const nextMembers = r.members.map(m => {
+          if (m.name === myName) return { ...m, finished: true };
+          return m;
+        });
+        return { ...r, members: nextMembers };
       }
       return r;
     });
 
     updateRoomsInStorage(updatedRooms);
   };
+
+  // Chủ phòng bấm Bắt đầu Bài Test Chung
+  const handleStartQuiz = () => {
+    if (!activeRoom) return;
+
+    const updatedRooms = rooms.map(r => {
+      if (r.id === activeRoom.id) {
+        // Trộn và gộp toàn bộ câu hỏi
+        let merged = [];
+        r.members.forEach(m => {
+          m.questions.forEach(q => {
+            merged.push({ text: q, creator: m.role });
+          });
+        });
+
+        return {
+          ...r,
+          status: 'quiz',
+          compiledQuestions: merged
+        };
+      }
+      return r;
+    });
+
+    updateRoomsInStorage(updatedRooms);
+  };
+
 
   // ============================================================================
   // CƠ CHẾ GIAI ĐOẠN 2: LÀM BÀI TEST CHUNG (COMPILED TEST)
@@ -894,37 +908,32 @@ function App() {
   const handleNextQuizQuestion = () => {
     if (!activeRoom || !tempAnswerText.trim()) return;
 
-    const myRole = getMyRoleInRoom(); // 'creator' hoặc 'joiner'
+    const myName = getMyUsernameInRoom();
     const qId = currentQuestionIndex;
 
     const updatedRooms = rooms.map(r => {
       if (r.id === activeRoom.id) {
-        const nextAnswers = { ...r.answers };
+        const nextMembers = r.members.map(m => {
+          if (m.name === myName) {
+            return {
+              ...m,
+              answers: { ...m.answers, [qId]: { text: tempAnswerText.trim(), emotion: tempEmotion } }
+            };
+          }
+          return m;
+        });
 
-        if (myRole === 'creator') {
-          nextAnswers.creator = {
-            ...nextAnswers.creator,
-            [qId]: { text: tempAnswerText.trim(), emotion: tempEmotion }
-          };
-        } else {
-          nextAnswers.joiner = {
-            ...nextAnswers.joiner,
-            [qId]: { text: tempAnswerText.trim(), emotion: tempEmotion }
-          };
-        }
-
-        const nextRoomState = { ...r, answers: nextAnswers };
+        const nextRoomState = { ...r, members: nextMembers };
 
         // Kiểm tra xem tab hiện tại đã hoàn thành toàn bộ câu hỏi chưa
         const isLastQ = currentQuestionIndex === r.compiledQuestions.length - 1;
         if (isLastQ) {
-          // Kiểm tra xem bên kia cũng đã làm xong toàn bộ câu hỏi chưa
-          const otherRole = myRole === 'creator' ? 'joiner' : 'creator';
-          const otherAnswersCount = Object.keys(nextAnswers[otherRole] || {}).length;
+          // Kiểm tra xem TẤT CẢ mọi người đã hoàn thành chưa
           const totalQCount = r.compiledQuestions.length;
+          const allCompleted = nextMembers.every(m => Object.keys(m.answers).length === totalQCount);
 
-          if (otherAnswersCount === totalQCount) {
-            // Cả hai đã làm xong bài kiểm tra -> Chuyển sang Giai đoạn 3 (review)
+          if (allCompleted) {
+            // Tất cả đã làm xong bài kiểm tra -> Chuyển sang Giai đoạn 3 (review)
             return {
               ...nextRoomState,
               status: 'review',
@@ -944,12 +953,12 @@ function App() {
     if (currentQuestionIndex < activeRoom.compiledQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       // Load câu trả lời cũ nếu có, hoặc reset trống
-      const myRole = getMyRoleInRoom();
-      const existingAnswer = activeRoom.answers[myRole]?.[currentQuestionIndex + 1];
+      const myMember = activeRoom.members.find(m => m.name === myName);
+      const existingAnswer = myMember?.answers[currentQuestionIndex + 1];
       setTempAnswerText(existingAnswer ? existingAnswer.text : '');
       setTempEmotion(existingAnswer ? existingAnswer.emotion : 'hopeful');
     } else {
-      // Đã hoàn thành câu cuối, chờ đối phương
+      // Đã hoàn thành câu cuối, chờ mọi người
       setCurrentQuestionIndex(activeRoom.compiledQuestions.length); // Trigger waiting view inside room
     }
   };
@@ -1036,23 +1045,37 @@ function App() {
     const total = room.compiledQuestions.length;
     if (total === 0) return 70;
 
-    for (let i = 0; i < total; i++) {
-      const cEmo = room.answers.creator[i]?.emotion;
-      const jEmo = room.answers.joiner[i]?.emotion;
+    const parents = room.members.filter(m => m.role === 'parent');
+    const children = room.members.filter(m => m.role === 'child');
 
-      // Nếu cùng cảm xúc hoặc cả hai đều có cảm xúc tích cực/hy vọng
-      if (cEmo === jEmo) {
-        matches += 1.0;
-      } else if (
-        (cEmo === 'hopeful' && jEmo === 'happy') ||
-        (cEmo === 'happy' && jEmo === 'hopeful')
-      ) {
-        matches += 0.8;
-      } else if (
-        (cEmo === 'anxious' && jEmo === 'stressed') ||
-        (cEmo === 'stressed' && jEmo === 'anxious')
-      ) {
-        matches += 0.5; // Sự thấu cảm trong nỗi lo
+    for (let i = 0; i < total; i++) {
+      let qScore = 0;
+      let pairs = 0;
+      
+      for (const p of parents) {
+        for (const c of children) {
+          const cEmo = p.answers[i]?.emotion;
+          const jEmo = c.answers[i]?.emotion;
+
+          // Nếu cùng cảm xúc hoặc cả hai đều có cảm xúc tích cực/hy vọng
+          if (cEmo === jEmo) {
+            qScore += 1.0;
+          } else if (
+            (cEmo === 'hopeful' && jEmo === 'happy') ||
+            (cEmo === 'happy' && jEmo === 'hopeful')
+          ) {
+            qScore += 0.8;
+          } else if (
+            (cEmo === 'anxious' && jEmo === 'stressed') ||
+            (cEmo === 'stressed' && jEmo === 'anxious')
+          ) {
+            qScore += 0.5; // Sự thấu cảm trong nỗi lo
+          }
+          pairs++;
+        }
+      }
+      if (pairs > 0) {
+        matches += (qScore / pairs);
       }
     }
 
@@ -2292,26 +2315,15 @@ function App() {
               </div>
 
               {/* Status members presence */}
-              <div className="member-presence-bar">
-                {/* Creator presence status */}
-                <div className="member-badge-indicator online">
-                  <span>🐻</span>
-                  <span>{activeRoom.creatorRole === 'parent' ? 'Phụ huynh' : 'Học sinh'}: <strong>{activeRoom.creatorName}</strong></span>
-                  <span style={{ color: 'var(--accent)' }}>{activeRoom.creatorFinished ? "✓ Đã xong Q" : "✍ Đang soạn"}</span>
-                </div>
-
-                {/* Joiner presence status */}
-                {activeRoom.joinerName ? (
-                  <div className="member-badge-indicator online">
-                    <span>🐰</span>
-                    <span>{activeRoom.joinerRole === 'parent' ? 'Phụ huynh' : 'Học sinh'}: <strong>{activeRoom.joinerName}</strong></span>
-                    <span style={{ color: 'var(--accent)' }}>{activeRoom.joinerFinished ? "✓ Đã xong Q" : "✍ Đang soạn"}</span>
+              {/* Status members presence */}
+              <div className="member-presence-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {activeRoom.members.map((m, idx) => (
+                  <div key={idx} className={`member-badge-indicator ${m.finished ? 'online' : 'offline'}`} style={{ opacity: 1 }}>
+                    <span>{m.role === 'parent' ? '🐻' : '🐰'}</span>
+                    <span>{m.role === 'parent' ? 'Phụ huynh' : 'Học sinh'}: <strong>{m.name}</strong> {m.name === activeRoom.creatorName && '(Chủ phòng)'}</span>
+                    <span style={{ color: 'var(--accent)' }}>{m.finished ? "✓ Đã xong Q" : "✍ Đang soạn"}</span>
                   </div>
-                ) : (
-                  <div className="member-badge-indicator offline">
-                    <span>⏳ Đang chờ người còn lại tham gia...</span>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
 
@@ -2330,77 +2342,97 @@ function App() {
                   </p>
 
                   {/* Disable editor if myQuestions are already finished */}
-                  {((getMyRoleInRoom() === 'creator' && activeRoom.creatorFinished) ||
-                    (getMyRoleInRoom() === 'joiner' && activeRoom.joinerFinished)) ? (
-                    <div style={{ textAlign: 'center', padding: '30px 10px', background: 'var(--accent-warm)', borderRadius: '12px', border: '1.5px dashed var(--accent)' }}>
-                      <span style={{ fontSize: '28px' }}>✨</span>
-                      <h4 style={{ color: 'var(--accent)', marginTop: '8px' }}>Bạn Đã Hoàn Thành Biên Soạn!</h4>
-                      <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Hãy thư giãn và chờ đợi đối phương hoàn tất danh sách câu hỏi của họ nhé.
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      {/* Editor Input */}
-                      <div className="form-group">
-                        <label>Viết Câu Hỏi Mới Của Bạn</label>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <input
-                            type="text"
-                            placeholder="Nhập nội dung câu hỏi tại đây..."
-                            value={newQuestionText}
-                            onChange={(e) => setNewQuestionText(e.target.value)}
-                          />
-                          <button className="btn btn-primary" onClick={handleAddQuestion}>
-                            Thêm
-                          </button>
-                        </div>
-                      </div>
+                  {(() => {
+                    const myMember = activeRoom.members.find(m => m.name === getMyUsernameInRoom());
+                    if (myMember?.finished) {
+                      return (
+                        <div style={{ textAlign: 'center', padding: '30px 10px', background: 'var(--accent-warm)', borderRadius: '12px', border: '1.5px dashed var(--accent)' }}>
+                          <span style={{ fontSize: '28px' }}>✨</span>
+                          <h4 style={{ color: 'var(--accent)', marginTop: '8px' }}>Bạn Đã Hoàn Thành Biên Soạn!</h4>
+                          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                            Hãy thư giãn và chờ đợi mọi người hoàn tất danh sách câu hỏi nhé.
+                          </p>
 
-                      {/* AI Question Presets suggestions */}
-                      <div style={{ marginBottom: '24px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>💡 Gợi ý câu hỏi tinh tế từ AI:</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {PRESET_AI_QUESTIONS.map((q, idx) => (
+                          {getMyUsernameInRoom() === activeRoom.creatorName && (
+                            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+                              {(() => {
+                                const hasParent = activeRoom.members.some(m => m.role === 'parent');
+                                const hasChild = activeRoom.members.some(m => m.role === 'child');
+                                const allFinished = activeRoom.members.every(m => m.finished);
+                                
+                                if (!hasParent || !hasChild) {
+                                  return <p style={{ color: '#E67E22', fontSize: '13px', fontStyle: 'italic', marginBottom: '12px' }}>⏳ Cần ít nhất 1 Phụ huynh và 1 Học sinh để bắt đầu Test.</p>;
+                                }
+                                if (!allFinished) {
+                                  return <p style={{ color: '#E67E22', fontSize: '13px', fontStyle: 'italic', marginBottom: '12px' }}>⏳ Đang chờ các thành viên khác hoàn tất câu hỏi...</p>;
+                                }
+                                return (
+                                  <button className="btn btn-primary" style={{ width: '100%', maxWidth: '300px' }} onClick={handleStartQuiz}>
+                                    Bắt Đầu Bài Test Chung 🚀
+                                  </button>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div>
+                          {/* Editor Input */}
+                          <div className="form-group">
+                            <label>Viết Câu Hỏi Mới Của Bạn</label>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <input
+                                type="text"
+                                placeholder="Nhập nội dung câu hỏi tại đây..."
+                                value={newQuestionText}
+                                onChange={(e) => setNewQuestionText(e.target.value)}
+                              />
+                              <button className="btn btn-primary" onClick={handleAddQuestion}>
+                                Thêm
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* AI Question Presets suggestions */}
+                          <div style={{ marginBottom: '24px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>💡 Gợi ý câu hỏi tinh tế từ AI:</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {PRESET_AI_QUESTIONS.map((q, idx) => (
+                                <button
+                                  className="preset-question-btn"
+                                  onClick={() => handleSelectPresetQuestion(q)}
+                                  key={idx}
+                                >
+                                  ✦ {q}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Action trigger complete question editing */}
+                          <div style={{ borderTop: '1.5px solid var(--border)', paddingTop: '20px', marginTop: '20px' }}>
+                            {/* Requirement validation */}
+                            {myMember?.questions.length === 0 ? (
+                              <p style={{ color: '#C0392B', fontSize: '13px', fontStyle: 'italic', marginBottom: '12px' }}>
+                                ⚠️ Bạn cần tạo ít nhất 1 câu hỏi để hoàn thành.
+                              </p>
+                            ) : null}
+
                             <button
-                              className="preset-question-btn"
-                              onClick={() => handleSelectPresetQuestion(q)}
-                              key={idx}
+                              className="btn btn-primary"
+                              style={{ width: '100%' }}
+                              onClick={handleFinishMyQuestions}
+                              disabled={myMember?.questions.length === 0}
                             >
-                              ✦ {q}
+                              Hoàn Thành Biên Soạn Câu Hỏi Của Tôi
                             </button>
-                          ))}
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Action trigger complete question editing */}
-                      <div style={{ borderTop: '1.5px solid var(--border)', paddingTop: '20px', marginTop: '20px' }}>
-                        {/* Requirement validation */}
-                        {((getMyRoleInRoom() === 'creator' && activeRoom.creatorQuestions.length === 0) ||
-                          (getMyRoleInRoom() === 'joiner' && activeRoom.joinerQuestions.length === 0)) ? (
-                          <p style={{ color: '#C0392B', fontSize: '13px', fontStyle: 'italic', marginBottom: '12px' }}>
-                            ⚠️ Bạn cần tạo ít nhất 1 câu hỏi để kích hoạt bài test.
-                          </p>
-                        ) : !activeRoom.joinerName ? (
-                          <p style={{ color: '#E67E22', fontSize: '13px', fontStyle: 'italic', marginBottom: '12px' }}>
-                            ⏳ Phòng cần đủ 2 người (đối lập vai trò) mới có thể bấm hoàn thành.
-                          </p>
-                        ) : null}
-
-                        <button
-                          className="btn btn-primary"
-                          style={{ width: '100%' }}
-                          onClick={handleFinishMyQuestions}
-                          disabled={
-                            (getMyRoleInRoom() === 'creator' && (activeRoom.creatorQuestions.length === 0 || !activeRoom.joinerName)) ||
-                            (getMyRoleInRoom() === 'joiner' && (activeRoom.joinerQuestions.length === 0 || !activeRoom.joinerName))
-                          }
-                        >
-                          Hoàn Thành Biên Soạn Câu Hỏi Của Tôi
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                      );
+                    }
+                  })()}
                 </div>
 
                 {/* Danh sách câu hỏi đã tạo của cá nhân bên phải */}
@@ -2410,8 +2442,9 @@ function App() {
 
                     {/* Render questions list of current user role */}
                     {(() => {
-                      const myRole = getMyRoleInRoom();
-                      const myQuestions = myRole === 'creator' ? activeRoom.creatorQuestions : activeRoom.joinerQuestions;
+                      const myName = getMyUsernameInRoom();
+                      const myMember = activeRoom.members.find(m => m.name === myName);
+                      const myQuestions = myMember ? myMember.questions : [];
 
                       if (myQuestions.length === 0) {
                         return (
@@ -2427,8 +2460,7 @@ function App() {
                             <div className="added-q-item" key={idx}>
                               <span className="added-q-text">{idx + 1}. {q}</span>
                               {/* Disable remove button if questions editing is locked */}
-                              {!((myRole === 'creator' && activeRoom.creatorFinished) ||
-                                (myRole === 'joiner' && activeRoom.joinerFinished)) && (
+                              {!myMember?.finished && (
                                   <button className="btn-remove-q" onClick={() => handleRemoveQuestion(idx)}>
                                     🗑️
                                   </button>
@@ -2457,8 +2489,9 @@ function App() {
             {activeRoom.status === 'quiz' && (
               <div className="animate-slide">
                 {(() => {
-                  const myRole = getMyRoleInRoom();
-                  const answers = activeRoom.answers[myRole] || {};
+                  const myName = getMyUsernameInRoom();
+                  const myMember = activeRoom.members.find(m => m.name === myName);
+                  const answers = myMember ? myMember.answers : {};
                   const myAnswersCount = Object.keys(answers).length;
                   const totalQuestions = activeRoom.compiledQuestions.length;
 
@@ -2552,7 +2585,9 @@ function App() {
                             if (currentQuestionIndex > 0) {
                               setCurrentQuestionIndex(prev => prev - 1);
                               // Load previous
-                              const existingAnswer = activeRoom.answers[myRole]?.[currentQuestionIndex - 1];
+                              const myName = getMyUsernameInRoom();
+                              const myMember = activeRoom.members.find(m => m.name === myName);
+                              const existingAnswer = myMember?.answers[currentQuestionIndex - 1];
                               setTempAnswerText(existingAnswer ? existingAnswer.text : '');
                               setTempEmotion(existingAnswer ? existingAnswer.emotion : 'hopeful');
                             }
@@ -2582,12 +2617,8 @@ function App() {
                   const revIdx = activeRoom.currentReviewIndex;
                   const totalQ = activeRoom.compiledQuestions.length;
                   const activeQ = activeRoom.compiledQuestions[revIdx];
-
-                  const parentAnswer = activeRoom.creatorRole === 'parent' ? activeRoom.answers.creator[revIdx] : activeRoom.answers.joiner[revIdx];
-                  const childAnswer = activeRoom.creatorRole === 'child' ? activeRoom.answers.creator[revIdx] : activeRoom.answers.joiner[revIdx];
-
-                  const parentName = activeRoom.creatorRole === 'parent' ? activeRoom.creatorName : activeRoom.joinerName;
-                  const childName = activeRoom.creatorRole === 'child' ? activeRoom.creatorName : activeRoom.joinerName;
+                  const parents = activeRoom.members.filter(m => m.role === 'parent');
+                  const children = activeRoom.members.filter(m => m.role === 'child');
 
                   // Tư vấn AI được tính toán qua Backend trong useEffect phía trên và lưu vào activeReviewAdvice
 
@@ -2613,33 +2644,49 @@ function App() {
                         {/* Parent Answer card */}
                         <div className="answer-card-col parent">
                           <span className="answer-header-title">
-                            👨‍👩‍👧‍👦 {parentName} (Cha mẹ)
+                            👨‍👩‍👧‍👦 Phụ huynh
                           </span>
-                          <p className="answer-text-content">
-                            "{parentAnswer ? parentAnswer.text : 'Cha mẹ chưa trả lời câu này'}"
-                          </p>
-                          {parentAnswer && (
-                            <div className="answer-emotion-badge">
-                              <span>Trạng thái:</span>
-                              <strong>{getEmotionIcon(parentAnswer.emotion).emoji} {getEmotionIcon(parentAnswer.emotion).text}</strong>
-                            </div>
-                          )}
+                          {parents.map((p, idx) => {
+                            const ans = p.answers[revIdx];
+                            return (
+                              <div key={idx} style={{ marginBottom: '15px' }}>
+                                <strong style={{ fontSize: '13px' }}>{p.name}:</strong>
+                                <p className="answer-text-content" style={{ margin: '4px 0' }}>
+                                  "{ans ? ans.text : 'Chưa trả lời'}"
+                                </p>
+                                {ans && (
+                                  <div className="answer-emotion-badge" style={{ marginTop: '5px' }}>
+                                    <span>Trạng thái:</span>
+                                    <strong>{getEmotionIcon(ans.emotion).emoji} {getEmotionIcon(ans.emotion).text}</strong>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
 
                         {/* Child Answer card */}
                         <div className="answer-card-col child">
                           <span className="answer-header-title">
-                            🎒 {childName} (Con cái)
+                            🎒 Học sinh
                           </span>
-                          <p className="answer-text-content">
-                            "{childAnswer ? childAnswer.text : 'Con chưa trả lời câu này'}"
-                          </p>
-                          {childAnswer && (
-                            <div className="answer-emotion-badge">
-                              <span>Trạng thái:</span>
-                              <strong>{getEmotionIcon(childAnswer.emotion).emoji} {getEmotionIcon(childAnswer.emotion).text}</strong>
-                            </div>
-                          )}
+                          {children.map((c, idx) => {
+                            const ans = c.answers[revIdx];
+                            return (
+                              <div key={idx} style={{ marginBottom: '15px' }}>
+                                <strong style={{ fontSize: '13px' }}>{c.name}:</strong>
+                                <p className="answer-text-content" style={{ margin: '4px 0' }}>
+                                  "{ans ? ans.text : 'Chưa trả lời'}"
+                                </p>
+                                {ans && (
+                                  <div className="answer-emotion-badge" style={{ marginTop: '5px' }}>
+                                    <span>Trạng thái:</span>
+                                    <strong>{getEmotionIcon(ans.emotion).emoji} {getEmotionIcon(ans.emotion).text}</strong>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
 
                       </div>
@@ -2673,9 +2720,9 @@ function App() {
                     <span className="score-number">{calculateUnderstandingScore(activeRoom)}%</span>
                     <span className="score-label">Mức thấu cảm</span>
                   </div>
-                  <h2 style={{ fontSize: '26px', marginBottom: '8px' }}>Chức mừng hai bạn đã thấu hiểu nhau hơn!</h2>
+                  <h2 style={{ fontSize: '26px', marginBottom: '8px' }}>Chúc mừng gia đình đã thấu hiểu nhau hơn!</h2>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', maxWidth: '500px', margin: '0 auto' }}>
-                    Dựa trên quá trình đối thoại và phản hồi cảm xúc của cả {activeRoom.creatorName} và {activeRoom.joinerName}, AI thấu cảm đã đúc kết được báo cáo định hướng hành vi dưới đây nhằm tiếp thêm động lực gắn kết gia đình.
+                    Dựa trên quá trình đối thoại và phản hồi cảm xúc của các thành viên, AI thấu cảm đã đúc kết được báo cáo định hướng hành vi dưới đây nhằm tiếp thêm động lực gắn kết gia đình.
                   </p>
                 </div>
 
