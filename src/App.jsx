@@ -1448,7 +1448,7 @@ function App() {
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
               <h2 style={{ fontSize: '32px', marginBottom: '12px' }}>Hướng Dẫn Kết Nối Của "Hiểu Nhau"</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Quy trình thấu cảm 5 bước được thiết kế bởi các chuyên gia tâm lý học hành vi nhằm giải tỏa áp lực, phá vỡ bức tường im lặng giữa hai thế hệ.
+                Quy trình thấu cảm 5 bước tinh gọn giúp gia đình nhanh chóng kết nối và thấu hiểu.
               </p>
             </div>
 
@@ -1456,9 +1456,9 @@ function App() {
               <div className="step-row">
                 <div className="step-num-circle">1</div>
                 <div className="step-card-content">
-                  <h3>Tạo Không Gian & Đặt Mật Khẩu</h3>
+                  <h3>Tạo Không Gian</h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14.5px' }}>
-                    Một bên khởi tạo phòng kiểm tra, sinh ra ID phòng duy nhất kèm mật khẩu an toàn. Điều này đảm bảo cuộc đối thoại gia đình hoàn toàn bảo mật, không có sự can thiệp của bên ngoài.
+                    Tạo phòng với ID và mật khẩu để đảm bảo không gian đối thoại gia đình riêng tư, an toàn.
                   </p>
                 </div>
               </div>
@@ -1466,9 +1466,9 @@ function App() {
               <div className="step-row">
                 <div className="step-num-circle">2</div>
                 <div className="step-card-content">
-                  <h3>Tham Gia Với Vai Trò Đối Lập</h3>
+                  <h3>Chọn Vai Trò</h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14.5px' }}>
-                    Để kích hoạt không gian kết nối, phòng yêu cầu **ít nhất 1 người vai trò Cha mẹ và 1 người vai trò Con cái**. Khi người thứ hai kết nối thành công, hệ thống ghi nhận trạng thái đồng hành thời gian thực.
+                    Một người làm Cha mẹ, một người làm Con cái để cùng bắt đầu kết nối.
                   </p>
                 </div>
               </div>
@@ -1476,9 +1476,9 @@ function App() {
               <div className="step-row">
                 <div className="step-num-circle">3</div>
                 <div className="step-card-content">
-                  <h3>Biên Soạn Câu Hỏi Tự Do & Riêng Tư</h3>
+                  <h3>Đặt Câu Hỏi Riêng Tư</h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14.5px' }}>
-                    Mỗi bên tự tạo những câu hỏi mà mình luôn thắc mắc hoặc trăn trở (hệ thống có sẵn gợi ý của AI). **Điều thú vị là nội dung câu hỏi nháp được giữ kín hoàn toàn**, người bên kia chỉ biết bạn đã hoàn thành phần soạn câu hỏi chưa.
+                    Tự do soạn những câu hỏi hoặc chọn từ gợi ý. Nội dung được giữ kín hoàn toàn đến lúc làm bài.
                   </p>
                 </div>
               </div>
@@ -1486,9 +1486,9 @@ function App() {
               <div className="step-row">
                 <div className="step-num-circle">4</div>
                 <div className="step-card-content">
-                  <h3>Gộp Câu Hỏi & Làm Bài Kiểm Tra Chung</h3>
+                  <h3>Cùng Làm Bài Test</h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14.5px' }}>
-                    Khi cả hai cùng bấm hoàn thành, hệ thống tự động gộp tất cả câu hỏi của hai bên thành một bài test chung. Cha mẹ và con cái sẽ trả lời độc lập các câu hỏi này, đính kèm cảm xúc thực tế (Vui, lo lắng, áp lực, hy vọng).
+                    Hệ thống gộp câu hỏi của cả hai. Mỗi người độc lập trả lời và chọn cảm xúc thực tế.
                   </p>
                 </div>
               </div>
@@ -1496,9 +1496,9 @@ function App() {
               <div className="step-row">
                 <div className="step-num-circle">5</div>
                 <div className="step-card-content">
-                  <h3>Duyệt Từng Câu Với Nhận Xét Chữa Lành Từ AI</h3>
+                  <h3>Nhận Tư Vấn Từ AI</h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '14.5px' }}>
-                    Sau cùng, cả hai bên cùng duyệt qua câu trả lời của nhau cho từng câu hỏi. Tại mỗi câu, AI thấu cảm sẽ đưa ra phân tích khách quan, làm dịu bất đồng, lý giải tâm lý và gợi ý hành động cụ thể cho cả hai mà **tuyệt đối không trách móc hay phân biệt đúng sai**.
+                    Cùng xem câu trả lời và nhận phân tích khách quan, không phán xét từ AI để thấu hiểu nhau hơn.
                   </p>
                 </div>
               </div>
