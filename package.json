@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "chromadb-default-embed": "^2.14.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
