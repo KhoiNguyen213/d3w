@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (KHÔNG push API key)
+.env
+backend/.env
+
+# Chroma local database
+chroma_data/
+
+# Mongo local files (nếu có)
+*.sqlite
+*.db
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
