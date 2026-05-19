@@ -32,7 +32,7 @@ export const initRAG = async () => {
         model: "text-embedding-3-small",
         input: tip.text,
       });
-      
+
       await collection.add({
         ids: [tip.id],
         embeddings: [embeddingResponse.data[0].embedding],
@@ -61,7 +61,7 @@ export const generateAdvice = async (question, parentAns, parentEmo, childAns, c
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: contextPrompt }],
     });
-    
+
     const problemSummary = summaryResponse.choices[0].message.content;
 
     // 2. RAG - Truy vấn ChromaDB để tìm lời khuyên phù hợp
@@ -76,7 +76,7 @@ export const generateAdvice = async (question, parentAns, parentEmo, childAns, c
         queryEmbeddings: [queryEmbedding.data[0].embedding],
         nResults: 2,
       });
-      
+
       retrievedTips = results.documents[0].join(' | ');
     }
 
@@ -118,7 +118,7 @@ export const generateAdvice = async (question, parentAns, parentEmo, childAns, c
     });
 
     return adviceResponse.choices[0].message.content.replace(/```html|```/g, '').trim();
-    
+
   } catch (error) {
     console.error("Error generating advice:", error);
     return `<p>Lỗi kết nối AI. Vui lòng thử lại sau.</p>`;

@@ -8,6 +8,7 @@ import Conclusion from './models/Conclusion.js';
 
 dotenv.config();
 
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -43,7 +44,7 @@ app.listen(PORT, () => {
 // Endpoint phân tích từng câu hỏi (Sinh lời khuyên AI)
 app.post('/api/analyze-understanding', async (req, res) => {
   const { question, parentAns, parentEmo, childAns, childEmo } = req.body;
-  
+
   if (!question || !parentAns || !childAns) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
