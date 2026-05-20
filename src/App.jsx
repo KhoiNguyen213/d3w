@@ -1958,10 +1958,10 @@ function App() {
               <div className="step-row">
                 <div className="step-num-circle">5</div>
                 <div className="step-card-content">
-                  <h3>Nhận Tư Vấn Từ AI</h3>
+                  <h3>Xem Kết Quả Tổng Hợp</h3>
                   <p style={{ color: "var(--text-muted)", fontSize: "14.5px" }}>
-                    Cùng xem câu trả lời và nhận phân tích khách quan, không
-                    phán xét từ AI để thấu hiểu nhau hơn.
+                    Cùng xem kết quả tổng hợp các phản hồi để thấu hiểu nhau
+                    hơn.
                   </p>
                 </div>
               </div>
