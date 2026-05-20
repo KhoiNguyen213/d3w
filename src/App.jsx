@@ -2198,7 +2198,7 @@ function App() {
                 </div>
 
                 {/* Kết quả hiển thị AI */}
-                <div style={{ display: "flex", flexDirection: "column" }}>
+                {/* <div style={{ display: "flex", flexDirection: "column" }}>
                   <span
                     style={{
                       fontWeight: "700",
@@ -2220,7 +2220,7 @@ function App() {
                     }}
                     dangerouslySetInnerHTML={{ __html: sandboxResult }}
                   />
-                </div>
+                </div> */}
               </div>
             </section>
           </div>
