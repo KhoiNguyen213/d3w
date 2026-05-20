@@ -2188,13 +2188,13 @@ function App() {
                     </div>
                   </div>
 
-                  <button
+                  {/* <button
                     className="btn btn-primary"
                     onClick={triggerSandboxAI}
                     style={{ width: "100%" }}
                   >
                     ✨ Phân Tích Bằng AI Thấu Cảm
-                  </button>
+                  </button> */}
                 </div>
 
                 {/* Kết quả hiển thị AI */}
