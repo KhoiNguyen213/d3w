@@ -321,7 +321,7 @@ function App() {
 
         try {
           const response = await fetch(
-            "https://d3w.onrender.com/api/analyze-understanding",
+            "http://localhost:5000/api/analyze-understanding",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
