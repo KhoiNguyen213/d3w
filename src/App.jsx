@@ -1981,7 +1981,7 @@ function App() {
         {/* ====================================================================
             3. VIEW AI EXPLANATION (TÍCH HỢP AI NHƯ THẾ NÀO)
             ==================================================================== */}
-        {currentView === "ai-info" && (
+        {/* {currentView === "ai-info" && (
           <div className="animate-slide">
             <div
               style={{
@@ -2061,11 +2061,11 @@ function App() {
               </div>
             </div>
 
-            {/* INTERACTIVE SANDBOX TESTING */}
+            INTERACTIVE SANDBOX TESTING
             <section
               className="card"
               style={{ border: "2px solid var(--primary)" }}
-            >
+              >
               <div style={{ textAlign: "center", marginBottom: "24px" }}>
                 <span
                   style={{
@@ -2090,7 +2090,7 @@ function App() {
               </div>
 
               <div className="ai-sandbox-grid">
-                {/* Cấu hình đầu vào */}
+                
                 <div>
                   <div className="form-group">
                     <label>Chọn Câu Hỏi Thử Nghiệm</label>
@@ -2188,17 +2188,17 @@ function App() {
                     </div>
                   </div>
 
-                  {/* <button
+                  <button
                     className="btn btn-primary"
                     onClick={triggerSandboxAI}
                     style={{ width: "100%" }}
                   >
                     ✨ Phân Tích Bằng AI Thấu Cảm
-                  </button> */}
+                  </button>
                 </div>
 
-                {/* Kết quả hiển thị AI */}
-                {/* <div style={{ display: "flex", flexDirection: "column" }}>
+                Kết quả hiển thị AI
+                <div style={{ display: "flex", flexDirection: "column" }}>
                   <span
                     style={{
                       fontWeight: "700",
@@ -2220,11 +2220,11 @@ function App() {
                     }}
                     dangerouslySetInnerHTML={{ __html: sandboxResult }}
                   />
-                </div> */}
+                </div>
               </div>
             </section>
           </div>
-        )}
+        )} */}
 
         {/* ====================================================================
             4. VIEW ABOUT US (VỀ CHÚNG TÔI)
