@@ -1981,7 +1981,7 @@ function App() {
         {/* ====================================================================
             3. VIEW AI EXPLANATION (TÍCH HỢP AI NHƯ THẾ NÀO)
             ==================================================================== */}
-        {/* {currentView === "ai-info" && (
+        {currentView === "ai-info" && (
           <div className="animate-slide">
             <div
               style={{
@@ -2061,7 +2061,7 @@ function App() {
               </div>
             </div>
 
-            INTERACTIVE SANDBOX TESTING
+            {/* INTERACTIVE SANDBOX TESTING
             <section
               className="card"
               style={{ border: "2px solid var(--primary)" }}
@@ -2222,9 +2222,9 @@ function App() {
                   />
                 </div>
               </div>
-            </section>
+            </section> */}
           </div>
-        )} */}
+        )}
 
         {/* ====================================================================
             4. VIEW ABOUT US (VỀ CHÚNG TÔI)
