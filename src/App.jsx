@@ -203,6 +203,8 @@ function App() {
   // Quản lý tài khoản
   const [profileName, setProfileName] = useState("");
   const [profileAge, setProfileAge] = useState("");
+  const [profilePassword, setProfilePassword] = useState("");
+  const [showProfilePassword, setShowProfilePassword] = useState(false);
   const [profileGender, setProfileGender] = useState("");
   const [profileBirthday, setProfileBirthday] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
@@ -402,6 +404,7 @@ function App() {
           userFound.mascotName || currentUser.mascotName || "Mascot",
         );
       }
+      setProfilePassword("");
       setProfileSuccess("");
       setProfileError("");
     }
@@ -604,6 +607,10 @@ function App() {
       mascot: profileAvatar,
       mascotName: profileAvatarMascotName,
     };
+
+    if (profilePassword.trim()) {
+      updatedUserInfo.password = profilePassword.trim();
+    }
     users[userIndex] = updatedUserInfo;
     localStorage.setItem("HN_registered_users", JSON.stringify(users));
 
@@ -2886,6 +2893,38 @@ function App() {
                     value={profileBirthday}
                     onChange={(e) => setProfileBirthday(e.target.value)}
                   />
+                </div>
+
+                <div className="form-group">
+                  <label>Mật Khẩu Mới (Bỏ trống nếu không đổi)</label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type={showProfilePassword ? "text" : "password"}
+                      placeholder="Nhập mật khẩu mới"
+                      value={profilePassword}
+                      onChange={(e) => setProfilePassword(e.target.value)}
+                      style={{ paddingRight: "48px" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowProfilePassword(!showProfilePassword)}
+                      style={{
+                        position: "absolute",
+                        right: "12px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        fontSize: "18px",
+                        cursor: "pointer",
+                        padding: "4px",
+                        lineHeight: 1,
+                      }}
+                      title={showProfilePassword ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                    >
+                      {showProfilePassword ? "👁️" : "🙈"}
+                    </button>
+                  </div>
                 </div>
 
                 <button
