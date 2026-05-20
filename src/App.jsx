@@ -205,6 +205,8 @@ function App() {
   const [profileAge, setProfileAge] = useState("");
   const [profilePassword, setProfilePassword] = useState("");
   const [showProfilePassword, setShowProfilePassword] = useState(false);
+  const [profileSavedPassword, setProfileSavedPassword] = useState("");
+  const [showSavedPassword, setShowSavedPassword] = useState(false);
   const [profileGender, setProfileGender] = useState("");
   const [profileBirthday, setProfileBirthday] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
@@ -403,6 +405,7 @@ function App() {
         setProfileAvatarMascotName(
           userFound.mascotName || currentUser.mascotName || "Mascot",
         );
+        setProfileSavedPassword(userFound.password || "");
       }
       setProfilePassword("");
       setProfileSuccess("");
@@ -2894,6 +2897,39 @@ function App() {
                     onChange={(e) => setProfileBirthday(e.target.value)}
                   />
                 </div>
+
+                {profileSavedPassword && (
+                  <div className="form-group">
+                    <label>Mật Khẩu Đã Lưu</label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type={showSavedPassword ? "text" : "password"}
+                        value={profileSavedPassword}
+                        readOnly
+                        style={{ paddingRight: "48px", backgroundColor: "rgba(0,0,0,0.03)", color: "var(--text-muted)" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSavedPassword(!showSavedPassword)}
+                        style={{
+                          position: "absolute",
+                          right: "12px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          fontSize: "18px",
+                          cursor: "pointer",
+                          padding: "4px",
+                          lineHeight: 1,
+                        }}
+                        title={showSavedPassword ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                      >
+                        {showSavedPassword ? "👁️" : "🙈"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label>Mật Khẩu Mới (Bỏ trống nếu không đổi)</label>
