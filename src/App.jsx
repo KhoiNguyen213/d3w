@@ -282,70 +282,70 @@ function App() {
   // ============================================================================
 
   // Fetch AI advice when entering review mode or changing review question
-  useEffect(() => {
-    const fetchReviewAdvice = async () => {
-      if (activeRoom && activeRoom.status === "review") {
-        setActiveReviewAdvice("<p>Đang phân tích phản hồi bằng AI RAG...</p>");
-        const revIdx = activeRoom.currentReviewIndex;
-        const activeQ = activeRoom.compiledQuestions[revIdx];
-        const parents = activeRoom.members.filter((m) => m.role === "parent");
-        const children = activeRoom.members.filter((m) => m.role === "child");
+  // useEffect(() => {
+  //   const fetchReviewAdvice = async () => {
+  //     if (activeRoom && activeRoom.status === "review") {
+  //       setActiveReviewAdvice("<p>Đang phân tích phản hồi bằng AI RAG...</p>");
+  //       const revIdx = activeRoom.currentReviewIndex;
+  //       const activeQ = activeRoom.compiledQuestions[revIdx];
+  //       const parents = activeRoom.members.filter((m) => m.role === "parent");
+  //       const children = activeRoom.members.filter((m) => m.role === "child");
 
-        const parentText = parents
-          .map(
-            (p) => `[${p.name}]: ${p.answers[revIdx]?.text || "Chưa trả lời"}`,
-          )
-          .join(" | ");
-        const childText = children
-          .map(
-            (c) => `[${c.name}]: ${c.answers[revIdx]?.text || "Chưa trả lời"}`,
-          )
-          .join(" | ");
+  //       const parentText = parents
+  //         .map(
+  //           (p) => `[${p.name}]: ${p.answers[revIdx]?.text || "Chưa trả lời"}`,
+  //         )
+  //         .join(" | ");
+  //       const childText = children
+  //         .map(
+  //           (c) => `[${c.name}]: ${c.answers[revIdx]?.text || "Chưa trả lời"}`,
+  //         )
+  //         .join(" | ");
 
-        const getModeEmotion = (members) => {
-          const counts = {};
-          members.forEach((m) => {
-            const emo = m.answers[revIdx]?.emotion;
-            if (emo) counts[emo] = (counts[emo] || 0) + 1;
-          });
-          let maxEmo = "hopeful";
-          let maxCount = 0;
-          for (const [emo, count] of Object.entries(counts)) {
-            if (count > maxCount) {
-              maxCount = count;
-              maxEmo = emo;
-            }
-          }
-          return maxEmo;
-        };
+  //       const getModeEmotion = (members) => {
+  //         const counts = {};
+  //         members.forEach((m) => {
+  //           const emo = m.answers[revIdx]?.emotion;
+  //           if (emo) counts[emo] = (counts[emo] || 0) + 1;
+  //         });
+  //         let maxEmo = "hopeful";
+  //         let maxCount = 0;
+  //         for (const [emo, count] of Object.entries(counts)) {
+  //           if (count > maxCount) {
+  //             maxCount = count;
+  //             maxEmo = emo;
+  //           }
+  //         }
+  //         return maxEmo;
+  //       };
 
-        try {
-          const response = await fetch(
-            "http://localhost:5000/api/analyze-understanding",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                question: activeQ.text,
-                parentAns: parentText,
-                parentEmo: getModeEmotion(parents),
-                childAns: childText,
-                childEmo: getModeEmotion(children),
-              }),
-            },
-          );
-          const data = await response.json();
-          setActiveReviewAdvice(data.adviceHTML);
-        } catch (e) {
-          console.error(e);
-          setActiveReviewAdvice(
-            '<p style="color:red;">Lỗi kết nối Backend (Node.js). Vui lòng kiểm tra server.</p>',
-          );
-        }
-      }
-    };
-    fetchReviewAdvice();
-  }, [activeRoom?.status, activeRoom?.currentReviewIndex]);
+  //       try {
+  //         const response = await fetch(
+  //           "http://localhost:5000/api/analyze-understanding",
+  //           {
+  //             method: "POST",
+  //             headers: { "Content-Type": "application/json" },
+  //             body: JSON.stringify({
+  //               question: activeQ.text,
+  //               parentAns: parentText,
+  //               parentEmo: getModeEmotion(parents),
+  //               childAns: childText,
+  //               childEmo: getModeEmotion(children),
+  //             }),
+  //           },
+  //         );
+  //         const data = await response.json();
+  //         setActiveReviewAdvice(data.adviceHTML);
+  //       } catch (e) {
+  //         console.error(e);
+  //         setActiveReviewAdvice(
+  //           '<p style="color:red;">Lỗi kết nối Backend (Node.js). Vui lòng kiểm tra server.</p>',
+  //         );
+  //       }
+  //     }
+  //   };
+  //   fetchReviewAdvice();
+  // }, [activeRoom?.status, activeRoom?.currentReviewIndex]);
 
   // Load cấu hình ban đầu
   useEffect(() => {
