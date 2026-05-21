@@ -10,31 +10,40 @@ const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
 });
 
-const chroma = new ChromaClient({
-  path: "http://localhost:8000",
-});
+// =========================
+// CHROMA (optional)
+// =========================
 
+let chroma = null;
 let collection = null;
 
+try {
+  chroma = new ChromaClient({
+    path: "http://localhost:8000",
+  });
+} catch {
+  console.log("Chroma disabled");
+}
+
 // =========================
-// KHỞI TẠO RAG
+// INIT RAG
 // =========================
 
 export const initRAG = async () => {
   try {
+    if (!chroma) return;
+
     collection = await chroma.getOrCreateCollection({
       name: "family_psychology_tips",
     });
 
     const count = await collection.count();
 
-    // tránh add lặp khi restart
-
     if (count === 0) {
       const tips = [
         {
           id: "1",
-          text: "Khi nói về điểm số, hãy ghi nhận nỗ lực của con trước khi đánh giá kết quả.",
+          text: "Khi nói về điểm số, hãy ghi nhận nỗ lực của con.",
         },
 
         {
@@ -44,12 +53,12 @@ export const initRAG = async () => {
 
         {
           id: "3",
-          text: "Tuổi dậy thì cần sự riêng tư và tôn trọng.",
+          text: "Tuổi dậy thì cần sự riêng tư.",
         },
 
         {
           id: "4",
-          text: "Quy tắc dùng điện thoại nên được thống nhất hai chiều.",
+          text: "Quy tắc dùng điện thoại nên thống nhất.",
         },
       ];
 
@@ -61,17 +70,19 @@ export const initRAG = async () => {
         metadatas: tips.map(() => ({ source: "expert" })),
       });
 
-      console.log("Added RAG knowledge");
+      console.log("RAG knowledge added");
     }
 
     console.log("RAG initialized");
   } catch (err) {
-    console.log("RAG init failed:", err.message);
+    console.log("RAG disabled:", err.message);
+
+    collection = null;
   }
 };
 
 // =========================
-// AI TƯ VẤN
+// GENERATE ADVICE
 // =========================
 
 export const generateAdvice = async (
@@ -84,28 +95,35 @@ export const generateAdvice = async (
   try {
     let retrievedTips = "";
 
-    // ---------- RAG SEARCH ----------
+    // -------- RAG SEARCH -------
 
     if (collection) {
-      const result = await collection.query({
-        queryTexts: [
-          `${question}
+      try {
+        const result = await collection.query({
+          queryTexts: [
+            `${question}
 ${parentAns}
 ${childAns}`,
-        ],
+          ],
 
-        nResults: 2,
-      });
+          nResults: 2,
+        });
 
-      retrievedTips = result.documents[0]?.join(" | ") || "";
+        retrievedTips = result.documents[0]?.join(" | ") || "";
+      } catch {
+        retrievedTips = "";
+      }
     }
 
-    // ---------- SUMMARY ----------
+    // -------- ONE GEMINI CALL -----
 
-    const summaryPrompt = `
+    const prompt = `
+
+Bạn là chuyên gia tâm lý gia đình.
+
+Không phán xét.
 
 Câu hỏi:
-
 ${question}
 
 Cha mẹ:
@@ -114,80 +132,35 @@ ${parentAns}
 Con:
 ${childAns}
 
-Tóm tắt vấn đề trong 1 câu.
-
-`;
-
-    const summary = await model.generateContent(summaryPrompt);
-
-    const problemSummary = summary.response.text();
-
-    // ---------- ADVICE ----------
-
-    const prompt = `
-
-Bạn là chuyên gia tâm lý gia đình.
-
-KHÔNG phán xét.
-
-Vấn đề:
-
-${problemSummary}
-
-Cha mẹ cảm xúc:
-
+Cảm xúc cha mẹ:
 ${parentEmo}
 
-Con cảm xúc:
-
+Cảm xúc con:
 ${childEmo}
 
 Kiến thức:
-
 ${retrievedTips}
-
-
 
 Trả về HTML:
 
-<p>
-<strong>
+<p><strong>
 💡 Nhận định:
-</strong>
-...
-</p>
+</strong></p>
 
 <div>
-
 <b>Cha mẹ:</b>
-
 ...
-
 </div>
 
 <div>
-
 <b>Con:</b>
-
 ...
-
 </div>
-
-<div>
 
 <ul>
-
-<li>
-Lời khuyên cha mẹ
-</li>
-
-<li>
-Lời khuyên con
-</li>
-
+<li>Lời khuyên cha mẹ</li>
+<li>Lời khuyên con</li>
 </ul>
-
-</div>
 
 `;
 
@@ -198,13 +171,34 @@ Lời khuyên con
       .replace(/```html|```/g, "")
       .trim();
   } catch (err) {
-    console.log(err);
+    console.log("Gemini error:", err.message);
+
+    // fallback khi hết quota
 
     return `
 <p>
-Lỗi AI.
-Vui lòng thử lại.
+⚠️ AI hiện tạm thời quá tải.
 </p>
+
+<div>
+<b>Gợi ý:</b>
+
+<ul>
+<li>
+Hãy lắng nghe trước khi phản hồi.
+</li>
+
+<li>
+Tránh phán xét cảm xúc.
+</li>
+
+<li>
+Trao đổi khi cả hai bình tĩnh.
+</li>
+
+</ul>
+
+</div>
 `;
   }
 };
