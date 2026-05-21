@@ -236,6 +236,8 @@ function App() {
 
   // --- STATE THỬ THÁCH GIAO TIẾP (7 NGÀY) ---
   const [challengeProgress, setChallengeProgress] = useState([]);
+  const [lastChallengeDate, setLastChallengeDate] = useState("");
+  const [timeUntilMidnight, setTimeUntilMidnight] = useState("");
 
   // --- STATE QUẢN LÝ PHÒNG ---
   const [rooms, setRooms] = useState([]);
@@ -404,6 +406,10 @@ function App() {
     if (savedChallenge) {
       setChallengeProgress(JSON.parse(savedChallenge));
     }
+    const savedLastChallenge = localStorage.getItem("HN_last_challenge_date");
+    if (savedLastChallenge) {
+      setLastChallengeDate(savedLastChallenge);
+    }
 
     // Load tất cả các phòng
     loadRoomsFromStorage();
@@ -415,6 +421,29 @@ function App() {
     // Chạy thử Sandbox AI
     triggerSandboxAI();
   }, []);
+
+  // Đồng hồ đếm ngược đến nửa đêm cho thử thách
+  useEffect(() => {
+    let interval;
+    if (currentView === "challenge" && lastChallengeDate === new Date().toISOString().split('T')[0]) {
+      const updateTimer = () => {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        const diff = tomorrow - now;
+        
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        setTimeUntilMidnight(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+      };
+      updateTimer();
+      interval = setInterval(updateTimer, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [currentView, lastChallengeDate]);
 
   // Nạp dữ liệu profile khi vào view quản lý tài khoản hoặc khi thay đổi user
   useEffect(() => {
@@ -1672,6 +1701,37 @@ function App() {
                 />
               </div>
             </section>
+
+            {/* NHẮC NHỞ HÀNG NGÀY */}
+            {(() => {
+              const todayStr = new Date().toISOString().split('T')[0];
+              const hasLoggedEmotionToday = emotionLogs.some(log => log.date === todayStr);
+              const hasCompletedChallengeToday = lastChallengeDate === todayStr;
+              const isChallengeDone = challengeProgress.length >= 7;
+
+              if (currentUser && (!hasLoggedEmotionToday || (!hasCompletedChallengeToday && !isChallengeDone))) {
+                return (
+                  <div className="card animate-fade" style={{ marginBottom: "30px", borderLeft: "4px solid var(--primary)", backgroundColor: "var(--accent-light)" }}>
+                    <h3 style={{ fontSize: "18px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>🔔 Nhắc Nhở Hôm Nay</h3>
+                    <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {!hasLoggedEmotionToday && (
+                        <li style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", backgroundColor: "white", borderRadius: "8px" }}>
+                          <span style={{ fontSize: "15px", color: "var(--text)" }}>Bạn chưa ghi lại cảm xúc hôm nay.</span>
+                          <button className="btn btn-secondary btn-sm" onClick={() => navigateTo('emotion-diary')}>Ghi ngay 📔</button>
+                        </li>
+                      )}
+                      {!hasCompletedChallengeToday && !isChallengeDone && (
+                        <li style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", backgroundColor: "white", borderRadius: "8px" }}>
+                          <span style={{ fontSize: "15px", color: "var(--text)" }}>Thử thách Ngày {challengeProgress.length + 1} đang chờ bạn.</span>
+                          <button className="btn btn-primary btn-sm" onClick={() => navigateTo('challenge')}>Thực hiện 🎯</button>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* BA BẢN ĐIỀU KHIỂN CHÍNH: TẠO PHÒNG - TÌM PHÒNG - LƯU PHÒNG */}
             <section
@@ -3669,7 +3729,45 @@ function App() {
               className="card"
               style={{ textAlign: "center", padding: "40px 20px" }}
             >
-              {challengeProgress.length < 7 ? (
+              {challengeProgress.length >= 7 ? (
+                <>
+                  <div style={{ fontSize: "48px", marginBottom: "20px" }}>
+                    🏆
+                  </div>
+                  <h3 style={{ fontSize: "24px", marginBottom: "16px" }}>
+                    Chúc mừng bạn đã hoàn thành 7 Ngày Thử Thách!
+                  </h3>
+                  <p
+                    style={{ color: "var(--text-muted)", marginBottom: "20px" }}
+                  >
+                    Hy vọng sự gắn kết trong gia đình bạn đã được cải thiện đáng kể.
+                  </p>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setChallengeProgress([]);
+                      setLastChallengeDate("");
+                      localStorage.setItem("HN_challenge_progress", "[]");
+                      localStorage.removeItem("HN_last_challenge_date");
+                    }}
+                  >
+                    Bắt đầu lại thử thách
+                  </button>
+                </>
+              ) : lastChallengeDate === new Date().toISOString().split('T')[0] ? (
+                <>
+                  <div style={{ fontSize: "48px", marginBottom: "20px" }}>⏳</div>
+                  <h3 style={{ fontSize: "24px", marginBottom: "16px" }}>
+                    Bạn đã hoàn thành nhiệm vụ hôm nay!
+                  </h3>
+                  <p style={{ color: "var(--text-muted)", marginBottom: "20px", fontSize: "16px" }}>
+                    Hãy nghỉ ngơi và quay lại vào ngày mai nhé. Thử thách tiếp theo sẽ mở khóa sau:
+                  </p>
+                  <div style={{ fontSize: "36px", fontWeight: "bold", color: "var(--primary)", fontFamily: "monospace", padding: "10px", backgroundColor: "var(--accent-light)", borderRadius: "12px", display: "inline-block" }}>
+                    {timeUntilMidnight || "00:00:00"}
+                  </div>
+                </>
+              ) : (
                 <>
                   <div
                     style={{
@@ -3705,43 +3803,22 @@ function App() {
                     className="btn btn-primary"
                     style={{ padding: "14px 32px", fontSize: "16px" }}
                     onClick={() => {
+                      const todayStr = new Date().toISOString().split('T')[0];
                       const nextDay = challengeProgress.length + 1;
                       const newProgress = [...challengeProgress, nextDay];
                       setChallengeProgress(newProgress);
+                      setLastChallengeDate(todayStr);
                       localStorage.setItem(
                         "HN_challenge_progress",
                         JSON.stringify(newProgress),
                       );
+                      localStorage.setItem("HN_last_challenge_date", todayStr);
                       alert(
                         "Tuyệt vời! Bạn đã hoàn thành nhiệm vụ ngày hôm nay. Hãy duy trì thói quen này nhé!",
                       );
                     }}
                   >
                     Đã Hoàn Thành ✨
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: "48px", marginBottom: "20px" }}>
-                    🏆
-                  </div>
-                  <h3 style={{ fontSize: "24px", marginBottom: "16px" }}>
-                    Chúc mừng bạn đã hoàn thành 7 Ngày Thử Thách!
-                  </h3>
-                  <p
-                    style={{ color: "var(--text-muted)", marginBottom: "20px" }}
-                  >
-                    Hy vọng sự gắn kết trong gia đình bạn đã được cải thiện đáng
-                    kể.
-                  </p>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setChallengeProgress([]);
-                      localStorage.setItem("HN_challenge_progress", "[]");
-                    }}
-                  >
-                    Bắt đầu lại thử thách
                   </button>
                 </>
               )}
