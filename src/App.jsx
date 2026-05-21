@@ -1,4 +1,9 @@
 import { useState, useEffect } from "react";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000";
+
+console.log("API:", API_URL);
 
 // ============================================================================
 // HỆ THỐNG DỮ LIỆU TĨNH: TRÍCH DẪN & GỢI Ý CÂU HỎI
@@ -419,7 +424,7 @@ function App() {
     setActiveQuote(COMFORT_QUOTES[randIndex]);
 
     // Chạy thử Sandbox AI
-    triggerSandboxAI();
+    useEffect(()=>{
   }, []);
 
   // Đồng hồ đếm ngược đến nửa đêm cho thử thách
@@ -552,7 +557,7 @@ function App() {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -576,7 +581,7 @@ function App() {
       setAuthSuccess("Đăng ký tài khoản thành công! Hãy đăng nhập ngay.");
     } catch (err) {
       console.error("Register error:", err);
-      setAuthError("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.");
+      setAuthError(err.message);
     }
   };
 
@@ -591,7 +596,7 @@ function App() {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        `${API_URL}/api/auth/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -601,8 +606,10 @@ function App() {
       const data = await res.json();
 
       if (!res.ok) {
-        setAuthError(data.error || "Đăng nhập thất bại.");
-        return;
+         throw new Error(
+    data.error ||
+    "Cập nhật thất bại"
+  );
       }
 
       // Sinh ảnh đại diện mặc định nếu server chưa lưu
@@ -627,7 +634,7 @@ function App() {
       navigateTo("home");
     } catch (err) {
       console.error("Login error:", err);
-      setAuthError("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.");
+      setAuthError(err.message);
     }
   };
 
@@ -655,7 +662,7 @@ function App() {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/profile`,
+        `${API_URL}/api/analyze-understanding`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -697,7 +704,7 @@ function App() {
       setProfileSuccess("Cập nhật thông tin tài khoản thành công! 🌸");
     } catch (err) {
       console.error("Profile update error:", err);
-      setProfileError("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.");
+      setProfileError(err.message);
     }
   };
 
@@ -1243,7 +1250,7 @@ function App() {
     setSandboxResult("<p>Đang phân tích bằng hệ thống AI RAG...</p>");
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/analyze-understanding`,
+        `${API_URL}/api/analyze-understanding`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1261,7 +1268,7 @@ function App() {
     } catch (e) {
       console.error(e);
       setSandboxResult(
-        '<p style="color:red;">Lỗi kết nối Backend. Hãy chắc chắn server Node.js đang chạy ở cổng 5000.</p>',
+        '<p style="color:red;">Không thể kết nối dịch vụ AI. Vui lòng thử lại.</p>',
       );
     }
   };
