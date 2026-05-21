@@ -226,6 +226,17 @@ function App() {
   // --- STATE BANNER TRÍCH DẪN NGẪU NHIÊN ---
   const [activeQuote, setActiveQuote] = useState(COMFORT_QUOTES[0]);
 
+  // --- STATE ONBOARDING (POPUP CHÀO MỪNG) ---
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(true);
+  const [welcomeRole, setWelcomeRole] = useState(null);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+
+  // --- STATE NHẬT KÝ CẢM XÚC ---
+  const [emotionLogs, setEmotionLogs] = useState([]);
+
+  // --- STATE THỬ THÁCH GIAO TIẾP (7 NGÀY) ---
+  const [challengeProgress, setChallengeProgress] = useState([]);
+
   // --- STATE QUẢN LÝ PHÒNG ---
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
@@ -374,6 +385,24 @@ function App() {
     const storedConclusions = localStorage.getItem("HN_saved_conclusions");
     if (storedConclusions) {
       setSavedConclusions(JSON.parse(storedConclusions));
+    }
+
+    // Nạp Onboarding
+    const savedWelcome = localStorage.getItem("HN_has_seen_welcome");
+    if (!savedWelcome) {
+      setHasSeenWelcome(false);
+    }
+
+    // Nạp Nhật ký cảm xúc
+    const savedEmotions = localStorage.getItem("HN_emotion_logs");
+    if (savedEmotions) {
+      setEmotionLogs(JSON.parse(savedEmotions));
+    }
+
+    // Nạp Thử thách
+    const savedChallenge = localStorage.getItem("HN_challenge_progress");
+    if (savedChallenge) {
+      setChallengeProgress(JSON.parse(savedChallenge));
     }
 
     // Load tất cả các phòng
@@ -1259,6 +1288,25 @@ function App() {
   };
 
   // ============================================================================
+  // TÍNH NĂNG CHIA SẺ
+  // ============================================================================
+  const handleShare = (title, text) => {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: title,
+          text: text,
+          url: window.location.href,
+        })
+        .catch(console.error);
+    } else {
+      alert(
+        "Tính năng chia sẻ chưa được hỗ trợ trên thiết bị của bạn. Bạn có thể copy link trang web nhé!",
+      );
+    }
+  };
+
+  // ============================================================================
   // PHẦN RENDER GIAO DIỆN (UI RENDERING)
   // ============================================================================
 
@@ -1276,6 +1324,115 @@ function App() {
 
   return (
     <>
+      {/* POPUP CHÀO MỪNG */}
+      {!hasSeenWelcome && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.7)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "var(--bg)",
+              borderRadius: "24px",
+              padding: "40px",
+              maxWidth: "500px",
+              width: "100%",
+              textAlign: "center",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            }}
+          >
+            {!showWelcomeMessage ? (
+              <>
+                <h2 style={{ fontSize: "28px", marginBottom: "20px" }}>
+                  Chào mừng đến với Hiểu Nhau ❤️
+                </h2>
+                <p
+                  style={{
+                    marginBottom: "30px",
+                    color: "var(--text-muted)",
+                    fontSize: "16px",
+                  }}
+                >
+                  Bạn đang tham gia với vai trò nào?
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1, padding: "16px", fontSize: "18px" }}
+                    onClick={() => {
+                      setWelcomeRole("parent");
+                      setShowWelcomeMessage(true);
+                    }}
+                  >
+                    👨‍👩‍👧 Phụ huynh
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ flex: 1, padding: "16px", fontSize: "18px" }}
+                    onClick={() => {
+                      setWelcomeRole("child");
+                      setShowWelcomeMessage(true);
+                    }}
+                  >
+                    👦 Học sinh
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: "48px", marginBottom: "20px" }}>
+                  {welcomeRole === "parent" ? "🌸" : "✨"}
+                </div>
+                <h2 style={{ fontSize: "24px", marginBottom: "16px" }}>
+                  {welcomeRole === "parent"
+                    ? "Cảm ơn bạn vì đã chọn Hiểu Nhau"
+                    : "Chúng tôi tin ở bạn"}
+                </h2>
+                <p
+                  style={{
+                    marginBottom: "30px",
+                    color: "var(--text-muted)",
+                    fontSize: "16px",
+                    lineHeight: "1.6",
+                  }}
+                >
+                  {welcomeRole === "parent"
+                    ? "Việc bạn có mặt ở đây đã cho thấy sự nỗ lực và tình yêu thương tuyệt vời mà bạn dành cho con cái. Hãy cùng nhau xây dựng sự thấu cảm nhé."
+                    : "Mỗi nỗ lực lắng nghe và chia sẻ của bạn đều rất đáng quý. Đừng ngại ngần mở lòng, gia đình luôn là nơi để trở về."}
+                </p>
+                <button
+                  className="btn btn-primary"
+                  style={{ padding: "12px 32px", fontSize: "16px" }}
+                  onClick={() => {
+                    setHasSeenWelcome(true);
+                    localStorage.setItem("HN_has_seen_welcome", "true");
+                  }}
+                >
+                  Bắt đầu trải nghiệm
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* HEADER NAVBAR */}
       <header>
         <div className="container navbar">
@@ -1301,15 +1458,41 @@ function App() {
               </a>
             </li>
             {currentUser && (
-              <li>
-                <a
-                  className={`nav-item ${currentView === "saved-conclusions" ? "active" : ""}`}
-                  onClick={() => navigateTo("saved-conclusions")}
-                >
-                  Kết Luận Đã Lưu 📖
-                </a>
-              </li>
+              <>
+                <li>
+                  <a
+                    className={`nav-item ${currentView === "saved-conclusions" ? "active" : ""}`}
+                    onClick={() => navigateTo("saved-conclusions")}
+                  >
+                    Kết Luận Đã Lưu 📖
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className={`nav-item ${currentView === "emotion-diary" ? "active" : ""}`}
+                    onClick={() => navigateTo("emotion-diary")}
+                  >
+                    Nhật Ký 📔
+                  </a>
+                </li>
+                <li>
+                  <a
+                    className={`nav-item ${currentView === "challenge" ? "active" : ""}`}
+                    onClick={() => navigateTo("challenge")}
+                  >
+                    Thử Thách 🎯
+                  </a>
+                </li>
+              </>
             )}
+            <li>
+              <a
+                className={`nav-item ${currentView === "resources" ? "active" : ""}`}
+                onClick={() => navigateTo("resources")}
+              >
+                Tài Nguyên
+              </a>
+            </li>
             <li>
               <a
                 className={`nav-item ${currentView === "ai-info" ? "active" : ""}`}
@@ -2906,7 +3089,11 @@ function App() {
                         type={showSavedPassword ? "text" : "password"}
                         value={profileSavedPassword}
                         readOnly
-                        style={{ paddingRight: "48px", backgroundColor: "rgba(0,0,0,0.03)", color: "var(--text-muted)" }}
+                        style={{
+                          paddingRight: "48px",
+                          backgroundColor: "rgba(0,0,0,0.03)",
+                          color: "var(--text-muted)",
+                        }}
                       />
                       <button
                         type="button"
@@ -2923,7 +3110,9 @@ function App() {
                           padding: "4px",
                           lineHeight: 1,
                         }}
-                        title={showSavedPassword ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                        title={
+                          showSavedPassword ? "Ẩn mật khẩu" : "Xem mật khẩu"
+                        }
                       >
                         {showSavedPassword ? "👁️" : "🙈"}
                       </button>
@@ -2943,7 +3132,9 @@ function App() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowProfilePassword(!showProfilePassword)}
+                      onClick={() =>
+                        setShowProfilePassword(!showProfilePassword)
+                      }
                       style={{
                         position: "absolute",
                         right: "12px",
@@ -2956,7 +3147,9 @@ function App() {
                         padding: "4px",
                         lineHeight: 1,
                       }}
-                      title={showProfilePassword ? "Ẩn mật khẩu" : "Xem mật khẩu"}
+                      title={
+                        showProfilePassword ? "Ẩn mật khẩu" : "Xem mật khẩu"
+                      }
                     >
                       {showProfilePassword ? "👁️" : "🙈"}
                     </button>
@@ -3218,6 +3411,19 @@ function App() {
                           📖 Xem Chi Tiết
                         </button>
                         <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() =>
+                            handleShare(
+                              `Báo cáo thấu hiểu: ${c.roomName}`,
+                              `Chúng tôi đã đạt được ${c.score}% thấu hiểu trên ứng dụng Hiểu Nhau. Hãy cùng gia đình bạn thử nhé!`,
+                            )
+                          }
+                          style={{ padding: "10px", fontSize: "13px" }}
+                          title="Chia sẻ kết quả"
+                        >
+                          🔗
+                        </button>
+                        <button
                           className="btn btn-sm"
                           onClick={() => {
                             if (
@@ -3245,6 +3451,476 @@ function App() {
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* ====================================================================
+            NHẬT KÝ CẢM XÚC (EMOTION DIARY)
+            ==================================================================== */}
+        {currentView === "emotion-diary" && currentUser && (
+          <div className="animate-slide">
+            <div style={{ textAlign: "center", marginBottom: "30px" }}>
+              <h2 style={{ fontSize: "28px", marginBottom: "12px" }}>
+                Nhật Ký Cảm Xúc
+              </h2>
+              <p style={{ color: "var(--text-muted)" }}>
+                Hôm nay bạn cảm thấy thế nào? Ghi lại cảm xúc giúp bạn thấu hiểu
+                bản thân hơn.
+              </p>
+            </div>
+
+            <div
+              className="card"
+              style={{ marginBottom: "30px", textAlign: "center" }}
+            >
+              <h3 style={{ marginBottom: "20px" }}>Bạn đang cảm thấy...</h3>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "16px",
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                {[
+                  { id: "happy", icon: "😊", label: "Vui vẻ" },
+                  { id: "normal", icon: "😐", label: "Bình thường" },
+                  { id: "stressed", icon: "😣", label: "Áp lực" },
+                  { id: "sad", icon: "😢", label: "Buồn" },
+                  { id: "angry", icon: "😡", label: "Tức giận" },
+                ].map((emo) => (
+                  <button
+                    key={emo.id}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: "16px",
+                      fontSize: "16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "8px",
+                      minWidth: "100px",
+                    }}
+                    onClick={() => {
+                      const newLog = {
+                        date: new Date().toISOString().split("T")[0],
+                        emotion: emo.id,
+                        label: emo.label,
+                        icon: emo.icon,
+                      };
+                      const existingIndex = emotionLogs.findIndex(
+                        (log) => log.date === newLog.date,
+                      );
+                      let newLogs = [...emotionLogs];
+                      if (existingIndex !== -1) {
+                        newLogs[existingIndex] = newLog;
+                      } else {
+                        newLogs.push(newLog);
+                      }
+                      setEmotionLogs(newLogs);
+                      localStorage.setItem(
+                        "HN_emotion_logs",
+                        JSON.stringify(newLogs),
+                      );
+                      alert(
+                        `Đã lưu cảm xúc: ${emo.label}. ${emo.id === "stressed" || emo.id === "sad" || emo.id === "angry" ? "Mọi chuyện rồi sẽ ổn thôi, hãy dành chút thời gian nghỉ ngơi nhé!" : "Tuyệt vời, chúc bạn một ngày tốt lành!"}`,
+                      );
+                    }}
+                  >
+                    <span style={{ fontSize: "32px" }}>{emo.icon}</span>
+                    <span>{emo.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="card">
+              <h3 style={{ marginBottom: "20px" }}>
+                Xu Hướng Cảm Xúc (7 Ngày Qua)
+              </h3>
+              {emotionLogs.length > 0 ? (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    overflowX: "auto",
+                    paddingBottom: "10px",
+                  }}
+                >
+                  {[...emotionLogs]
+                    .reverse()
+                    .slice(0, 7)
+                    .map((log, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          minWidth: "80px",
+                          textAlign: "center",
+                          padding: "12px",
+                          backgroundColor: "var(--bg)",
+                          borderRadius: "12px",
+                          border: "1px solid var(--border)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-muted)",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          {log.date}
+                        </div>
+                        <div style={{ fontSize: "28px" }}>{log.icon}</div>
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            marginTop: "8px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {log.label}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p style={{ color: "var(--text-muted)", textAlign: "center" }}>
+                  Chưa có dữ liệu cảm xúc. Hãy ghi lại cảm xúc đầu tiên của bạn
+                  nhé!
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ====================================================================
+            THỬ THÁCH GIAO TIẾP (7 NGÀY)
+            ==================================================================== */}
+        {currentView === "challenge" && currentUser && (
+          <div className="animate-slide">
+            <div style={{ textAlign: "center", marginBottom: "30px" }}>
+              <h2 style={{ fontSize: "28px", marginBottom: "12px" }}>
+                Thử Thách 7 Ngày: Kết Nối Cùng Nhau
+              </h2>
+              <p style={{ color: "var(--text-muted)" }}>
+                Nhiệm vụ nhỏ mỗi ngày giúp cải thiện giao tiếp gia đình.
+              </p>
+            </div>
+
+            <div className="card" style={{ marginBottom: "30px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "20px",
+                }}
+              >
+                <h3 style={{ margin: 0 }}>Tiến Độ Thử Thách</h3>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() =>
+                    handleShare(
+                      "Thử Thách 7 Ngày - Hiểu Nhau",
+                      "Tôi đang tham gia thử thách kết nối gia đình 7 ngày trên Hiểu Nhau. Bạn cùng tham gia nhé!",
+                    )
+                  }
+                >
+                  🔗 Chia sẻ kết quả
+                </button>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  overflowX: "auto",
+                  paddingBottom: "10px",
+                  justifyContent: "center",
+                }}
+              >
+                {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                  <div
+                    key={day}
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: challengeProgress.includes(day)
+                        ? "var(--primary)"
+                        : "var(--bg)",
+                      color: challengeProgress.includes(day)
+                        ? "white"
+                        : "var(--text)",
+                      border: `2px solid ${challengeProgress.includes(day) ? "var(--primary)" : "var(--border)"}`,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="card"
+              style={{ textAlign: "center", padding: "40px 20px" }}
+            >
+              {challengeProgress.length < 7 ? (
+                <>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      color: "var(--primary)",
+                      fontWeight: "700",
+                      marginBottom: "12px",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Nhiệm vụ Ngày {challengeProgress.length + 1}
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: "22px",
+                      marginBottom: "30px",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    {
+                      [
+                        "Hỏi người thân điều gì khiến họ cảm thấy áp lực nhất dạo gần đây.",
+                        "Dành 15 phút lắng nghe trọn vẹn mà không ngắt lời hay phán xét.",
+                        "Nói một lời cảm ơn chân thành về một điều nhỏ bé người kia đã làm.",
+                        "Cùng nhau chia sẻ một kỉ niệm vui trong quá khứ.",
+                        "Hỏi ý kiến người thân về một quyết định nhỏ trong ngày.",
+                        "Viết một tờ giấy nhắn yêu thương và để ở nơi dễ thấy.",
+                        "Ôm người thân một cái thật chặt thay cho lời chào buổi sáng.",
+                      ][challengeProgress.length]
+                    }
+                  </h3>
+                  <button
+                    className="btn btn-primary"
+                    style={{ padding: "14px 32px", fontSize: "16px" }}
+                    onClick={() => {
+                      const nextDay = challengeProgress.length + 1;
+                      const newProgress = [...challengeProgress, nextDay];
+                      setChallengeProgress(newProgress);
+                      localStorage.setItem(
+                        "HN_challenge_progress",
+                        JSON.stringify(newProgress),
+                      );
+                      alert(
+                        "Tuyệt vời! Bạn đã hoàn thành nhiệm vụ ngày hôm nay. Hãy duy trì thói quen này nhé!",
+                      );
+                    }}
+                  >
+                    Đã Hoàn Thành ✨
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: "48px", marginBottom: "20px" }}>
+                    🏆
+                  </div>
+                  <h3 style={{ fontSize: "24px", marginBottom: "16px" }}>
+                    Chúc mừng bạn đã hoàn thành 7 Ngày Thử Thách!
+                  </h3>
+                  <p
+                    style={{ color: "var(--text-muted)", marginBottom: "20px" }}
+                  >
+                    Hy vọng sự gắn kết trong gia đình bạn đã được cải thiện đáng
+                    kể.
+                  </p>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setChallengeProgress([]);
+                      localStorage.setItem("HN_challenge_progress", "[]");
+                    }}
+                  >
+                    Bắt đầu lại thử thách
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ====================================================================
+            TÀI NGUYÊN (RESOURCES)
+            ==================================================================== */}
+        {currentView === "resources" && (
+          <div className="animate-slide">
+            <div style={{ textAlign: "center", marginBottom: "40px" }}>
+              <h2 style={{ fontSize: "32px", marginBottom: "12px" }}>
+                Tài Nguyên Hữu Ích
+              </h2>
+              <p style={{ color: "var(--text-muted)" }}>
+                Kiến thức tâm lý và kỹ năng giao tiếp giúp xây dựng gia đình
+                hạnh phúc.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                gap: "24px",
+              }}
+            >
+              <div className="card">
+                <h3
+                  style={{
+                    borderBottom: "2px solid var(--border)",
+                    paddingBottom: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  📄 Bài viết hữu ích
+                </h3>
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  <li>
+                    <a
+                      href="#"
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                      }}
+                    >
+                      5 cách lắng nghe thấu cảm con cái tuổi dậy thì
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Làm sao để cha mẹ hiểu được áp lực học tập của con?
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Kiểm soát cảm xúc khi xảy ra xung đột gia đình
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="card">
+                <h3
+                  style={{
+                    borderBottom: "2px solid var(--border)",
+                    paddingBottom: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  🎥 Video hướng dẫn
+                </h3>
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  <li>
+                    <a
+                      href="#"
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                      }}
+                    >
+                      [Video] Đóng vai: Phản ứng đúng và sai khi con điểm kém
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      style={{
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                      }}
+                    >
+                      [Video] Cách nói chuyện để trẻ tự mở lời
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="card">
+                <h3
+                  style={{
+                    borderBottom: "2px solid var(--border)",
+                    paddingBottom: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  ❓ Câu hỏi thường gặp
+                </h3>
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  <li>
+                    <strong>
+                      Q: Tôi nên làm gì khi con không chịu nói chuyện?
+                    </strong>
+                    <br />
+                    <span
+                      style={{ fontSize: "14px", color: "var(--text-muted)" }}
+                    >
+                      A: Đừng ép buộc, hãy bắt đầu bằng việc ở bên cạnh và chia
+                      sẻ trước về một ngày của bạn...
+                    </span>
+                  </li>
+                  <li>
+                    <strong>
+                      Q: Cãi vã nhiều có nghĩa là gia đình bất hạnh?
+                    </strong>
+                    <br />
+                    <span
+                      style={{ fontSize: "14px", color: "var(--text-muted)" }}
+                    >
+                      A: Không, cãi vã là quá trình đi tìm tiếng nói chung nếu
+                      biết cách tranh luận lành mạnh...
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         )}
 
@@ -4198,14 +4874,37 @@ function App() {
           <span className="mobile-nav-text">Hướng Dẫn</span>
         </a>
         {currentUser && (
-          <a
-            className={`mobile-nav-item ${currentView === "saved-conclusions" ? "active" : ""}`}
-            onClick={() => navigateTo("saved-conclusions")}
-          >
-            <span className="mobile-nav-icon">📖</span>
-            <span className="mobile-nav-text">Lưu Trữ</span>
-          </a>
+          <>
+            <a
+              className={`mobile-nav-item ${currentView === "saved-conclusions" ? "active" : ""}`}
+              onClick={() => navigateTo("saved-conclusions")}
+            >
+              <span className="mobile-nav-icon">📖</span>
+              <span className="mobile-nav-text">Lưu Trữ</span>
+            </a>
+            <a
+              className={`mobile-nav-item ${currentView === "emotion-diary" ? "active" : ""}`}
+              onClick={() => navigateTo("emotion-diary")}
+            >
+              <span className="mobile-nav-icon">📔</span>
+              <span className="mobile-nav-text">Nhật Ký</span>
+            </a>
+            <a
+              className={`mobile-nav-item ${currentView === "challenge" ? "active" : ""}`}
+              onClick={() => navigateTo("challenge")}
+            >
+              <span className="mobile-nav-icon">🎯</span>
+              <span className="mobile-nav-text">Thử Thách</span>
+            </a>
+          </>
         )}
+        <a
+          className={`mobile-nav-item ${currentView === "resources" ? "active" : ""}`}
+          onClick={() => navigateTo("resources")}
+        >
+          <span className="mobile-nav-icon">📚</span>
+          <span className="mobile-nav-text">Tài Nguyên</span>
+        </a>
         <a
           className={`mobile-nav-item ${currentView === "ai-info" ? "active" : ""}`}
           onClick={() => navigateTo("ai-info")}
