@@ -425,19 +425,24 @@ function App() {
   // Đồng hồ đếm ngược đến nửa đêm cho thử thách
   useEffect(() => {
     let interval;
-    if (currentView === "challenge" && lastChallengeDate === new Date().toISOString().split('T')[0]) {
+    if (
+      currentView === "challenge" &&
+      lastChallengeDate === new Date().toISOString().split("T")[0]
+    ) {
       const updateTimer = () => {
         const now = new Date();
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0);
         const diff = tomorrow - now;
-        
+
         const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        setTimeUntilMidnight(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+
+        setTimeUntilMidnight(
+          `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`,
+        );
       };
       updateTimer();
       interval = setInterval(updateTimer, 1000);
@@ -550,7 +555,11 @@ function App() {
       const res = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: regEmail, password: regPassword, name: regName }),
+        body: JSON.stringify({
+          email: regEmail,
+          password: regPassword,
+          name: regName,
+        }),
       });
       const data = await res.json();
 
@@ -642,20 +651,23 @@ function App() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: currentUser.email,
-          name: profileName.trim(),
-          age: profileAge,
-          gender: profileGender,
-          birthday: profileBirthday,
-          mascot: profileAvatar,
-          mascotName: profileAvatarMascotName,
-          password: profilePassword.trim() || undefined,
-        }),
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/profile`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: currentUser.email,
+            name: profileName.trim(),
+            age: profileAge,
+            gender: profileGender,
+            birthday: profileBirthday,
+            mascot: profileAvatar,
+            mascotName: profileAvatarMascotName,
+            password: profilePassword.trim() || undefined,
+          }),
+        },
+      );
       const data = await res.json();
 
       if (!res.ok) {
@@ -674,7 +686,10 @@ function App() {
         birthday: data.user.birthday,
       };
       setCurrentUser(updatedSessionUser);
-      localStorage.setItem("HN_current_user", JSON.stringify(updatedSessionUser));
+      localStorage.setItem(
+        "HN_current_user",
+        JSON.stringify(updatedSessionUser),
+      );
 
       setProfileSuccess("Cập nhật thông tin tài khoản thành công! 🌸");
     } catch (err) {
@@ -1699,26 +1714,94 @@ function App() {
 
             {/* NHẮC NHỞ HÀNG NGÀY */}
             {(() => {
-              const todayStr = new Date().toISOString().split('T')[0];
-              const hasLoggedEmotionToday = emotionLogs.some(log => log.date === todayStr);
+              const todayStr = new Date().toISOString().split("T")[0];
+              const hasLoggedEmotionToday = emotionLogs.some(
+                (log) => log.date === todayStr,
+              );
               const hasCompletedChallengeToday = lastChallengeDate === todayStr;
               const isChallengeDone = challengeProgress.length >= 7;
 
-              if (currentUser && (!hasLoggedEmotionToday || (!hasCompletedChallengeToday && !isChallengeDone))) {
+              if (
+                currentUser &&
+                (!hasLoggedEmotionToday ||
+                  (!hasCompletedChallengeToday && !isChallengeDone))
+              ) {
                 return (
-                  <div className="card animate-fade" style={{ marginBottom: "30px", borderLeft: "4px solid var(--primary)", backgroundColor: "var(--accent-light)" }}>
-                    <h3 style={{ fontSize: "18px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>🔔 Nhắc Nhở Hôm Nay</h3>
-                    <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div
+                    className="card animate-fade"
+                    style={{
+                      marginBottom: "30px",
+                      borderLeft: "4px solid var(--primary)",
+                      backgroundColor: "var(--accent-light)",
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: "18px",
+                        marginBottom: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      🔔 Nhắc Nhở Hôm Nay
+                    </h3>
+                    <ul
+                      style={{
+                        listStyle: "none",
+                        padding: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
                       {!hasLoggedEmotionToday && (
-                        <li style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", backgroundColor: "white", borderRadius: "8px" }}>
-                          <span style={{ fontSize: "15px", color: "var(--text)" }}>Bạn chưa ghi lại cảm xúc hôm nay.</span>
-                          <button className="btn btn-secondary btn-sm" onClick={() => navigateTo('emotion-diary')}>Ghi ngay 📔</button>
+                        <li
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "10px",
+                            backgroundColor: "white",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          <span
+                            style={{ fontSize: "15px", color: "var(--text)" }}
+                          >
+                            Bạn chưa ghi lại cảm xúc hôm nay.
+                          </span>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => navigateTo("emotion-diary")}
+                          >
+                            Ghi ngay 📔
+                          </button>
                         </li>
                       )}
                       {!hasCompletedChallengeToday && !isChallengeDone && (
-                        <li style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", backgroundColor: "white", borderRadius: "8px" }}>
-                          <span style={{ fontSize: "15px", color: "var(--text)" }}>Thử thách Ngày {challengeProgress.length + 1} đang chờ bạn.</span>
-                          <button className="btn btn-primary btn-sm" onClick={() => navigateTo('challenge')}>Thực hiện 🎯</button>
+                        <li
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "10px",
+                            backgroundColor: "white",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          <span
+                            style={{ fontSize: "15px", color: "var(--text)" }}
+                          >
+                            Thử thách Ngày {challengeProgress.length + 1} đang
+                            chờ bạn.
+                          </span>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => navigateTo("challenge")}
+                          >
+                            Thực hiện 🎯
+                          </button>
                         </li>
                       )}
                     </ul>
@@ -3735,7 +3818,8 @@ function App() {
                   <p
                     style={{ color: "var(--text-muted)", marginBottom: "20px" }}
                   >
-                    Hy vọng sự gắn kết trong gia đình bạn đã được cải thiện đáng kể.
+                    Hy vọng sự gắn kết trong gia đình bạn đã được cải thiện đáng
+                    kể.
                   </p>
                   <button
                     className="btn btn-secondary"
@@ -3749,16 +3833,37 @@ function App() {
                     Bắt đầu lại thử thách
                   </button>
                 </>
-              ) : lastChallengeDate === new Date().toISOString().split('T')[0] ? (
+              ) : lastChallengeDate ===
+                new Date().toISOString().split("T")[0] ? (
                 <>
-                  <div style={{ fontSize: "48px", marginBottom: "20px" }}>⏳</div>
+                  <div style={{ fontSize: "48px", marginBottom: "20px" }}>
+                    ⏳
+                  </div>
                   <h3 style={{ fontSize: "24px", marginBottom: "16px" }}>
                     Bạn đã hoàn thành nhiệm vụ hôm nay!
                   </h3>
-                  <p style={{ color: "var(--text-muted)", marginBottom: "20px", fontSize: "16px" }}>
-                    Hãy nghỉ ngơi và quay lại vào ngày mai nhé. Thử thách tiếp theo sẽ mở khóa sau:
+                  <p
+                    style={{
+                      color: "var(--text-muted)",
+                      marginBottom: "20px",
+                      fontSize: "16px",
+                    }}
+                  >
+                    Hãy nghỉ ngơi và quay lại vào ngày mai nhé. Thử thách tiếp
+                    theo sẽ mở khóa sau:
                   </p>
-                  <div style={{ fontSize: "36px", fontWeight: "bold", color: "var(--primary)", fontFamily: "monospace", padding: "10px", backgroundColor: "var(--accent-light)", borderRadius: "12px", display: "inline-block" }}>
+                  <div
+                    style={{
+                      fontSize: "36px",
+                      fontWeight: "bold",
+                      color: "var(--primary)",
+                      fontFamily: "monospace",
+                      padding: "10px",
+                      backgroundColor: "var(--accent-light)",
+                      borderRadius: "12px",
+                      display: "inline-block",
+                    }}
+                  >
                     {timeUntilMidnight || "00:00:00"}
                   </div>
                 </>
@@ -3798,7 +3903,7 @@ function App() {
                     className="btn btn-primary"
                     style={{ padding: "14px 32px", fontSize: "16px" }}
                     onClick={() => {
-                      const todayStr = new Date().toISOString().split('T')[0];
+                      const todayStr = new Date().toISOString().split("T")[0];
                       const nextDay = challengeProgress.length + 1;
                       const newProgress = [...challengeProgress, nextDay];
                       setChallengeProgress(newProgress);
