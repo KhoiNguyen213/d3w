@@ -536,7 +536,7 @@ function App() {
   // CÁC HÀM XỬ LÝ AUTHENTICATION (ĐĂNG NHẬP / ĐĂNG KÝ)
   // ============================================================================
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setAuthError("");
     setAuthSuccess("");
@@ -546,38 +546,32 @@ function App() {
       return;
     }
 
-    // Đọc danh sách tài khoản đã có
-    const users = JSON.parse(
-      localStorage.getItem("HN_registered_users") || "[]",
-    );
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: regEmail, password: regPassword, name: regName }),
+      });
+      const data = await res.json();
 
-    // Kiểm tra xem email đã được đăng ký chưa
-    const exists = users.some(
-      (u) => u.email.toLowerCase() === regEmail.toLowerCase(),
-    );
-    if (exists) {
-      setAuthError("Email này đã tồn tại trong hệ thống. Vui lòng đăng nhập.");
-      return;
+      if (!res.ok) {
+        setAuthError(data.error || "Đăng ký thất bại.");
+        return;
+      }
+
+      setRegEmail("");
+      setRegPassword("");
+      setRegName("");
+      // Tự động chuyển sang giao diện đăng nhập và hiển thị thông báo thành công
+      setCurrentView("login");
+      setAuthSuccess("Đăng ký tài khoản thành công! Hãy đăng nhập ngay.");
+    } catch (err) {
+      console.error("Register error:", err);
+      setAuthError("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.");
     }
-
-    // Thêm user mới
-    const newUser = {
-      email: regEmail,
-      password: regPassword,
-      name: regName,
-    };
-    users.push(newUser);
-    localStorage.setItem("HN_registered_users", JSON.stringify(users));
-
-    setRegEmail("");
-    setRegPassword("");
-    setRegName("");
-    // Tự động chuyển sang giao diện đăng nhập và hiển thị thông báo thành công
-    setCurrentView("login");
-    setAuthSuccess("Đăng ký tài khoản thành công! Hãy đăng nhập ngay.");
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError("");
 
@@ -586,42 +580,43 @@ function App() {
       return;
     }
 
-    // Đọc danh sách tài khoản
-    const users = JSON.parse(
-      localStorage.getItem("HN_registered_users") || "[]",
-    );
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = await res.json();
 
-    // Xác minh tài khoản
-    const userFound = users.find(
-      (u) =>
-        u.email.toLowerCase() === loginEmail.toLowerCase() &&
-        u.password === loginPassword,
-    );
+      if (!res.ok) {
+        setAuthError(data.error || "Đăng nhập thất bại.");
+        return;
+      }
 
-    if (!userFound) {
-      setAuthError(
-        "Tài khoản hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.",
-      );
-      return;
+      // Sinh ảnh đại diện mặc định nếu server chưa lưu
+      const avatar = getAvatarByEmail(data.user.email);
+
+      const loggedInUser = {
+        email: data.user.email,
+        name: data.user.name,
+        mascot: data.user.mascot || avatar.mascot,
+        mascotName: data.user.mascotName || avatar.name,
+        avatarColor: avatar.color,
+        age: data.user.age || "",
+        gender: data.user.gender || "",
+        birthday: data.user.birthday || "",
+      };
+
+      setCurrentUser(loggedInUser);
+      localStorage.setItem("HN_current_user", JSON.stringify(loggedInUser));
+
+      setLoginEmail("");
+      setLoginPassword("");
+      navigateTo("home");
+    } catch (err) {
+      console.error("Login error:", err);
+      setAuthError("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.");
     }
-
-    // Sinh ảnh đại diện ngẫu nhiên
-    const avatar = getAvatarByEmail(userFound.email);
-
-    const loggedInUser = {
-      email: userFound.email,
-      name: userFound.name,
-      mascot: avatar.mascot,
-      mascotName: avatar.name,
-      avatarColor: avatar.color,
-    };
-
-    setCurrentUser(loggedInUser);
-    localStorage.setItem("HN_current_user", JSON.stringify(loggedInUser));
-
-    setLoginEmail("");
-    setLoginPassword("");
-    navigateTo("home");
   };
 
   const handleLogout = () => {
@@ -636,7 +631,7 @@ function App() {
   };
 
   // Lưu thông tin chỉnh sửa tài khoản (Tên, Tuổi, Giới tính, Ngày sinh - Các trường này không bắt buộc trừ Tên)
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
     setProfileSuccess("");
     setProfileError("");
@@ -646,46 +641,46 @@ function App() {
       return;
     }
 
-    const users = JSON.parse(
-      localStorage.getItem("HN_registered_users") || "[]",
-    );
-    const userIndex = users.findIndex(
-      (u) => u.email.toLowerCase() === currentUser.email.toLowerCase(),
-    );
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: currentUser.email,
+          name: profileName.trim(),
+          age: profileAge,
+          gender: profileGender,
+          birthday: profileBirthday,
+          mascot: profileAvatar,
+          mascotName: profileAvatarMascotName,
+          password: profilePassword.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
 
-    if (userIndex === -1) {
-      setProfileError("Không tìm thấy tài khoản người dùng tương ứng.");
-      return;
+      if (!res.ok) {
+        setProfileError(data.error || "Cập nhật thất bại.");
+        return;
+      }
+
+      // Cập nhật phiên đăng nhập (session) hiện thời
+      const updatedSessionUser = {
+        ...currentUser,
+        name: data.user.name,
+        mascot: data.user.mascot,
+        mascotName: data.user.mascotName,
+        age: data.user.age,
+        gender: data.user.gender,
+        birthday: data.user.birthday,
+      };
+      setCurrentUser(updatedSessionUser);
+      localStorage.setItem("HN_current_user", JSON.stringify(updatedSessionUser));
+
+      setProfileSuccess("Cập nhật thông tin tài khoản thành công! 🌸");
+    } catch (err) {
+      console.error("Profile update error:", err);
+      setProfileError("Không thể kết nối tới máy chủ. Vui lòng thử lại sau.");
     }
-
-    // Cập nhật thông tin trong danh sách tài khoản đã đăng ký
-    const updatedUserInfo = {
-      ...users[userIndex],
-      name: profileName.trim(),
-      age: profileAge,
-      gender: profileGender,
-      birthday: profileBirthday,
-      mascot: profileAvatar,
-      mascotName: profileAvatarMascotName,
-    };
-
-    if (profilePassword.trim()) {
-      updatedUserInfo.password = profilePassword.trim();
-    }
-    users[userIndex] = updatedUserInfo;
-    localStorage.setItem("HN_registered_users", JSON.stringify(users));
-
-    // Cập nhật phiên đăng nhập (session) hiện thời
-    const updatedSessionUser = {
-      ...currentUser,
-      name: profileName.trim(),
-      mascot: profileAvatar,
-      mascotName: profileAvatarMascotName,
-    };
-    setCurrentUser(updatedSessionUser);
-    localStorage.setItem("HN_current_user", JSON.stringify(updatedSessionUser));
-
-    setProfileSuccess("Cập nhật thông tin tài khoản thành công! 🌸");
   };
 
   // Xử lý paste ảnh từ clipboard
