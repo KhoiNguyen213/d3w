@@ -423,8 +423,7 @@ function App() {
     const randIndex = Math.floor(Math.random() * COMFORT_QUOTES.length);
     setActiveQuote(COMFORT_QUOTES[randIndex]);
 
-    // Chạy thử Sandbox AI
-    useEffect(()=>{
+    // Chạy thử Sandbox AI 
   }, []);
 
   // Đồng hồ đếm ngược đến nửa đêm cho thử thách
@@ -5593,6 +5592,6 @@ function App() {
       )}
     </>
   );
-}
+}}
 
 export default App;
