@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 console.log("API:", API_URL);
 
@@ -423,7 +421,7 @@ function App() {
     const randIndex = Math.floor(Math.random() * COMFORT_QUOTES.length);
     setActiveQuote(COMFORT_QUOTES[randIndex]);
 
-    // Chạy thử Sandbox AI 
+    // Chạy thử Sandbox AI
   }, []);
 
   // Đồng hồ đếm ngược đến nửa đêm cho thử thách
@@ -594,21 +592,15 @@ function App() {
     }
 
     try {
-      const res = await fetch(
-        `${API_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-        },
-      );
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
       const data = await res.json();
 
       if (!res.ok) {
-         throw new Error(
-    data.error ||
-    "Cập nhật thất bại"
-  );
+        throw new Error(data.error || "Cập nhật thất bại");
       }
 
       // Sinh ảnh đại diện mặc định nếu server chưa lưu
@@ -660,23 +652,20 @@ function App() {
     }
 
     try {
-      const res = await fetch(
-        `${API_URL}/api/analyze-understanding`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: currentUser.email,
-            name: profileName.trim(),
-            age: profileAge,
-            gender: profileGender,
-            birthday: profileBirthday,
-            mascot: profileAvatar,
-            mascotName: profileAvatarMascotName,
-            password: profilePassword.trim() || undefined,
-          }),
-        },
-      );
+      const res = await fetch(`${API_URL}/api/analyze-understanding`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: currentUser.email,
+          name: profileName.trim(),
+          age: profileAge,
+          gender: profileGender,
+          birthday: profileBirthday,
+          mascot: profileAvatar,
+          mascotName: profileAvatarMascotName,
+          password: profilePassword.trim() || undefined,
+        }),
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -1248,20 +1237,17 @@ function App() {
   const triggerSandboxAI = async () => {
     setSandboxResult("<p>Đang phân tích bằng hệ thống AI RAG...</p>");
     try {
-      const response = await fetch(
-        `${API_URL}/api/analyze-understanding`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: sandboxQuestion,
-            parentAns: sandboxParentAns,
-            parentEmo: sandboxParentEmo,
-            childAns: sandboxChildAns,
-            childEmo: sandboxChildEmo,
-          }),
-        },
-      );
+      const response = await fetch(`${API_URL}/api/analyze-understanding`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: sandboxQuestion,
+          parentAns: sandboxParentAns,
+          parentEmo: sandboxParentEmo,
+          childAns: sandboxChildAns,
+          childEmo: sandboxChildEmo,
+        }),
+      });
       const data = await response.json();
       setSandboxResult(data.adviceHTML);
     } catch (e) {
@@ -5592,6 +5578,6 @@ function App() {
       )}
     </>
   );
-}}
+}
 
 export default App;
