@@ -597,10 +597,23 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       });
-      const data = await res.json();
+      // const data = await res.json();
+
+      // if (!res.ok) {
+      //   throw new Error(data.error || "Cập nhật thất bại");
+      // }
+      let data = {};
+
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server trả dữ liệu không hợp lệ");
+      }
 
       if (!res.ok) {
-        throw new Error(data.error || "Cập nhật thất bại");
+        console.log("LOGIN FAIL:", data);
+
+        throw new Error(data.error || data.message || `Lỗi ${res.status}`);
       }
 
       // Sinh ảnh đại diện mặc định nếu server chưa lưu
