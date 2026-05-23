@@ -582,6 +582,65 @@ function App() {
     }
   };
 
+  // const handleLogin = async (e) => {
+  //   e.preventDefault();
+  //   setAuthError("");
+
+  //   if (!loginEmail || !loginPassword) {
+  //     setAuthError("Vui lòng nhập Email và Mật khẩu.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const res = await fetch(`${API_URL}/api/auth/login`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+  //     });
+  //     // const data = await res.json();
+
+  //     // if (!res.ok) {
+  //     //   throw new Error(data.error || "Cập nhật thất bại");
+  //     // }
+  //     let data = {};
+
+  //     try {
+  //       data = await res.json();
+  //     } catch {
+  //       throw new Error("Server trả dữ liệu không hợp lệ");
+  //     }
+
+  //     if (!res.ok) {
+  //       console.log("LOGIN FAIL:", data);
+
+  //       throw new Error(data.error || data.message || `Lỗi ${res.status}`);
+  //     }
+
+  //     // Sinh ảnh đại diện mặc định nếu server chưa lưu
+  //     const avatar = getAvatarByEmail(data.user.email);
+
+  //     const loggedInUser = {
+  //       email: data.user.email,
+  //       name: data.user.name,
+  //       mascot: data.user.mascot || avatar.mascot,
+  //       mascotName: data.user.mascotName || avatar.name,
+  //       avatarColor: avatar.color,
+  //       age: data.user.age || "",
+  //       gender: data.user.gender || "",
+  //       birthday: data.user.birthday || "",
+  //     };
+
+  //     setCurrentUser(loggedInUser);
+  //     localStorage.setItem("HN_current_user", JSON.stringify(loggedInUser));
+
+  //     setLoginEmail("");
+  //     setLoginPassword("");
+  //     navigateTo("home");
+  //   } catch (err) {
+  //     console.error("Login error:", err);
+  //     setAuthError(err.message);
+  //   }
+  // };
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError("");
@@ -592,52 +651,67 @@ function App() {
     }
 
     try {
+      console.log("Đang gọi:", `${API_URL}/api/auth/login`);
+
       const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-      });
-      // const data = await res.json();
 
-      // if (!res.ok) {
-      //   throw new Error(data.error || "Cập nhật thất bại");
-      // }
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          email: loginEmail,
+          password: loginPassword,
+        }),
+      });
+
+      console.log("Status:", res.status);
+
+      const text = await res.text();
+
+      console.log("Response:", text);
+
       let data = {};
 
       try {
-        data = await res.json();
+        data = JSON.parse(text);
       } catch {
-        throw new Error("Server trả dữ liệu không hợp lệ");
+        throw new Error("Server không trả JSON");
       }
 
       if (!res.ok) {
-        console.log("LOGIN FAIL:", data);
-
-        throw new Error(data.error || data.message || `Lỗi ${res.status}`);
+        throw new Error(data.error || `Lỗi ${res.status}`);
       }
 
-      // Sinh ảnh đại diện mặc định nếu server chưa lưu
       const avatar = getAvatarByEmail(data.user.email);
 
       const loggedInUser = {
         email: data.user.email,
+
         name: data.user.name,
+
         mascot: data.user.mascot || avatar.mascot,
+
         mascotName: data.user.mascotName || avatar.name,
+
         avatarColor: avatar.color,
+
         age: data.user.age || "",
+
         gender: data.user.gender || "",
+
         birthday: data.user.birthday || "",
       };
 
       setCurrentUser(loggedInUser);
+
       localStorage.setItem("HN_current_user", JSON.stringify(loggedInUser));
 
-      setLoginEmail("");
-      setLoginPassword("");
       navigateTo("home");
     } catch (err) {
-      console.error("Login error:", err);
+      console.error(err);
+
       setAuthError(err.message);
     }
   };
