@@ -114,38 +114,66 @@ app.post("/api/auth/register", async (req, res) => {
 });
 
 // 2. Đăng nhập
-app.post("/api/auth/login", async (req, res) => {
-  console.log("LOGIN BODY:", req.body);
+// app.post("/api/auth/login", async (req, res) => {
+//   console.log("LOGIN BODY:", req.body);
 
+//   const { email, password } = req.body;
+//   if (!email || !password) {
+//     return res.status(400).json({ error: "Vui lòng nhập Email và Mật khẩu." });
+//   }
+
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user || user.password !== password) {
+//       return res
+//         .status(401)
+//         .json({ error: "Tài khoản hoặc mật khẩu không chính xác." });
+//     }
+
+//     // Trả về thông tin không chứa mật khẩu (có thể tạo JWT token nhưng đơn giản thì trả object)
+//     res.json({
+//       success: true,
+//       user: {
+//         email: user.email,
+//         name: user.name,
+//         mascot: user.mascot,
+//         mascotName: user.mascotName,
+//         age: user.age,
+//         gender: user.gender,
+//         birthday: user.birthday,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Lỗi đăng nhập:", error);
+//     res.status(500).json({ error: "Đã xảy ra lỗi trên máy chủ." });
+//   }
+// });
+app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: "Vui lòng nhập Email và Mật khẩu." });
-  }
 
   try {
+    console.log("BODY:", req.body);
+
     const user = await User.findOne({ email });
+
+    console.log("USER:", user);
+
     if (!user || user.password !== password) {
-      return res
-        .status(401)
-        .json({ error: "Tài khoản hoặc mật khẩu không chính xác." });
+      return res.status(401).json({
+        error: "Sai tài khoản hoặc mật khẩu",
+      });
     }
 
-    // Trả về thông tin không chứa mật khẩu (có thể tạo JWT token nhưng đơn giản thì trả object)
     res.json({
       success: true,
-      user: {
-        email: user.email,
-        name: user.name,
-        mascot: user.mascot,
-        mascotName: user.mascotName,
-        age: user.age,
-        gender: user.gender,
-        birthday: user.birthday,
-      },
+      user,
     });
   } catch (error) {
-    console.error("Lỗi đăng nhập:", error);
-    res.status(500).json({ error: "Đã xảy ra lỗi trên máy chủ." });
+    console.error("LOGIN ERROR:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
