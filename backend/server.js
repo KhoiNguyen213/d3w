@@ -10,10 +10,12 @@ import User from "./models/User.js";
 dotenv.config();
 
 const app = express();
-app.use(cors({
-  origin: "*",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 // Kết nối MongoDB
@@ -96,11 +98,9 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({
-          error: "Email này đã tồn tại trong hệ thống. Vui lòng đăng nhập.",
-        });
+      return res.status(400).json({
+        error: "Email này đã tồn tại trong hệ thống. Vui lòng đăng nhập.",
+      });
     }
 
     const newUser = new User({ email, password, name });
@@ -115,6 +115,8 @@ app.post("/api/auth/register", async (req, res) => {
 
 // 2. Đăng nhập
 app.post("/api/auth/login", async (req, res) => {
+  console.log("LOGIN BODY:", req.body);
+
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Vui lòng nhập Email và Mật khẩu." });
