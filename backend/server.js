@@ -108,8 +108,11 @@ app.post("/api/auth/register", async (req, res) => {
 
     res.status(201).json({ success: true, message: "Đăng ký thành công." });
   } catch (error) {
-    console.error("Lỗi đăng ký:", error);
-    res.status(500).json({ error: "Đã xảy ra lỗi trên máy chủ." });
+    console.error("REGISTER ERROR:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
