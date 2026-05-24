@@ -10,12 +10,7 @@ import User from "./models/User.js";
 dotenv.config();
 
 const app = express();
-app.use(
-  cors({
-    origin: "*",
-    credentials: true,
-  }),
-);
+app.use(cors());
 app.use(express.json());
 
 // Kết nối MongoDB
@@ -91,6 +86,9 @@ app.post("/api/conclusions", async (req, res) => {
 // 1. Đăng ký tài khoản
 app.post("/api/auth/register", async (req, res) => {
   const { email, password, name } = req.body;
+
+  console.log("REGISTER BODY:", req.body);
+
   if (!email || !password || !name) {
     return res.status(400).json({ error: "Vui lòng điền đầy đủ thông tin." });
   }
