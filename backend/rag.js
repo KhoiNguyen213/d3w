@@ -6,12 +6,20 @@ dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const model = genAI.getGenerativeModel({
+// =========================
+// GEMINI MODELS
+// =========================
+
+const chatModel = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
 });
 
+const embeddingModel = genAI.getGenerativeModel({
+  model: "text-embedding-004",
+});
+
 // =========================
-// CHROMA (optional)
+// CHROMA
 // =========================
 
 let chroma = null;
@@ -21,6 +29,8 @@ try {
   chroma = new ChromaClient({
     path: "http://localhost:8000",
   });
+
+  console.log("Chroma connected");
 } catch {
   console.log("Chroma disabled");
 }
@@ -34,96 +44,66 @@ export const initRAG = async () => {
     if (!chroma) return;
 
     collection = await chroma.getOrCreateCollection({
-      name: "family_psychology_tips",
+      name: "family_psychology",
     });
 
     const count = await collection.count();
 
-    if (count === 0) {
-      const tips = [
-        {
-          id: "1",
-          text: "Khi nói về điểm số, hãy ghi nhận nỗ lực của con.",
-        },
-
-        {
-          id: "2",
-          text: "Cha mẹ nên lắng nghe trước khi đưa lời khuyên.",
-        },
-
-        {
-          id: "3",
-          text: "Tuổi dậy thì cần sự riêng tư.",
-        },
-
-        {
-          id: "4",
-          text: "Quy tắc dùng điện thoại nên thống nhất.",
-        },
-      ];
-
-      await collection.add({
-        ids: tips.map((t) => t.id),
-
-        documents: tips.map((t) => t.text),
-
-        metadatas: tips.map(() => ({ source: "expert" })),
-      });
-
-      console.log("RAG knowledge added");
+    if (count > 0) {
+      console.log("RAG exists");
+      return;
     }
+
+    const docs = [
+      "Cha mẹ nên ghi nhận nỗ lực thay vì chỉ điểm số.",
+      "Tuổi dậy thì cần được tôn trọng cảm xúc.",
+      "So sánh con với người khác dễ tạo áp lực.",
+      "Lắng nghe trước khi góp ý giúp tăng kết nối.",
+      "Thiếu giao tiếp lâu dài tạo khoảng cách gia đình.",
+      "Áp lực học tập kéo dài ảnh hưởng tâm lý.",
+      "Kỷ luật hiệu quả cần đi kèm giải thích.",
+      "Con cái thường muốn được thấu hiểu hơn bị kiểm soát.",
+      "Quy tắc điện thoại nên thống nhất hai bên.",
+      "Cha mẹ nên hỏi cảm xúc trước khi hỏi kết quả.",
+    ];
+
+    const embeddings = await Promise.all(
+      docs.map(async (doc) => {
+        const e = await embeddingModel.embedContent(doc);
+
+        return e.embedding.values;
+      }),
+    );
+
+    await collection.add({
+      ids: docs.map((_, i) => `${i}`),
+
+      documents: docs,
+
+      embeddings,
+
+      metadatas: docs.map(() => ({
+        source: "expert",
+      })),
+    });
 
     console.log("RAG initialized");
   } catch (err) {
-    console.log("RAG disabled:", err.message);
+    console.log("Init RAG error:", err.message);
 
     collection = null;
   }
 };
 
 // =========================
-// GENERATE ADVICE
+// SEARCH KNOWLEDGE
 // =========================
 
-export const generateAdvice = async (
-  question,
-  parentAns,
-  parentEmo,
-  childAns,
-  childEmo,
-) => {
+async function searchKnowledge(question, parentAns, childAns) {
   try {
-    let retrievedTips = "";
+    if (!collection) return "";
 
-    // -------- RAG SEARCH -------
-
-    if (collection) {
-      try {
-        const result = await collection.query({
-          queryTexts: [
-            `${question}
-${parentAns}
-${childAns}`,
-          ],
-
-          nResults: 2,
-        });
-
-        retrievedTips = result.documents[0]?.join(" | ") || "";
-      } catch {
-        retrievedTips = "";
-      }
-    }
-
-    // -------- ONE GEMINI CALL -----
-
-    const prompt = `
-
-Bạn là chuyên gia tâm lý gia đình.
-
-Không phán xét.
-
-Câu hỏi:
+    const query = `
 ${question}
 
 Cha mẹ:
@@ -131,74 +111,163 @@ ${parentAns}
 
 Con:
 ${childAns}
+`;
 
-Cảm xúc cha mẹ:
+    const embedding = await embeddingModel.embedContent(query);
+
+    const result = await collection.query({
+      queryEmbeddings: [embedding.embedding.values],
+
+      nResults: 3,
+    });
+
+    return result.documents[0]?.join("\n") || "";
+  } catch {
+    return "";
+  }
+}
+
+// =========================
+// GENERATE ADVICE
+// =========================
+
+export const generateAdvice = async (
+  question,
+
+  parentAns,
+  parentEmo,
+
+  childAns,
+  childEmo,
+) => {
+  try {
+    const knowledge = await searchKnowledge(question, parentAns, childAns);
+
+    const prompt = `
+
+Bạn là chuyên gia tâm lý gia đình.
+
+Mục tiêu:
+
+- tăng thấu hiểu
+- không phán xét
+- phát hiện khoảng cách cảm xúc
+- đưa lời khuyên thực tế
+
+Thông tin:
+
+Câu hỏi:
+${question}
+
+Cha mẹ:
+${parentAns}
+
+Cảm xúc:
 ${parentEmo}
 
-Cảm xúc con:
+Con:
+${childAns}
+
+Cảm xúc:
 ${childEmo}
 
 Kiến thức:
-${retrievedTips}
 
-Trả về HTML:
+${knowledge}
 
-<p><strong>
-💡 Nhận định:
-</strong></p>
 
-<div>
-<b>Cha mẹ:</b>
-...
-</div>
+Phân tích:
 
-<div>
-<b>Con:</b>
-...
-</div>
+1. Điểm giống nhau
+2. Khác biệt suy nghĩ
+3. Mức độ thấu hiểu (0-100)
+4. Điểm tin tưởng (0-100)
+5. Nguy cơ xung đột (0-100)
+6. Lời khuyên cha mẹ
+7. Lời khuyên con
+8. Hành động cả hai nên làm
 
-<ul>
-<li>Lời khuyên cha mẹ</li>
-<li>Lời khuyên con</li>
-</ul>
+Trả JSON:
+
+{
+
+"similarity":"",
+"understanding":0,
+
+"trust":0,
+
+"conflict":0,
+
+"parentAdvice":"",
+
+"childAdvice":"",
+
+"action":""
+
+}
+
+Chỉ trả JSON.
 
 `;
 
-    const response = await model.generateContent(prompt);
+    const response = await chatModel.generateContent(prompt);
 
-    return response.response
+    const text = response.response
       .text()
-      .replace(/```html|```/g, "")
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
       .trim();
+
+    const parsed = JSON.parse(text);
+
+    return {
+      success: true,
+
+      similarity: parsed.similarity,
+
+      understanding: parsed.understanding,
+
+      trust: parsed.trust,
+
+      conflict: parsed.conflict,
+
+      parentAdvice: parsed.parentAdvice,
+
+      childAdvice: parsed.childAdvice,
+
+      action: parsed.action,
+    };
   } catch (err) {
     console.log("Gemini error:", err.message);
 
-    // fallback khi hết quota
+    // fallback thông minh
 
-    return `
-<p>
-⚠️ AI hiện tạm thời quá tải.
-</p>
+    let advice = "Hãy dành thời gian lắng nghe.";
 
-<div>
-<b>Gợi ý:</b>
+    if (childEmo?.includes("buồn")) {
+      advice = "Con có thể đang cần được chia sẻ nhiều hơn.";
+    }
 
-<ul>
-<li>
-Hãy lắng nghe trước khi phản hồi.
-</li>
+    if (parentEmo?.includes("giận")) {
+      advice = "Phản hồi sau khi bình tĩnh thường hiệu quả hơn.";
+    }
 
-<li>
-Tránh phán xét cảm xúc.
-</li>
+    return {
+      success: false,
 
-<li>
-Trao đổi khi cả hai bình tĩnh.
-</li>
+      similarity: "Chưa đủ dữ liệu",
 
-</ul>
+      understanding: 50,
 
-</div>
-`;
+      trust: 50,
+
+      conflict: 50,
+
+      parentAdvice: advice,
+
+      childAdvice: "Thử diễn đạt cảm xúc thay vì im lặng.",
+
+      action: "Dành 10 phút nói chuyện không phán xét.",
+    };
   }
 };

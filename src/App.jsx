@@ -1336,7 +1336,7 @@ function App() {
         }),
       });
       const data = await response.json();
-      setSandboxResult(data.adviceHTML);
+      setSandboxResult(data);
     } catch (e) {
       console.error(e);
       setSandboxResult(
@@ -4929,16 +4929,66 @@ function App() {
                       {/* empathetic AI Advice card */}
                       <div className="ai-advice-wrapper">
                         <div className="ai-advice-header">
-                          <span>
-                            🌱 LỜI KHUYÊN DỊU MÁT TỪ AI (KHÔNG PHÁN XÉT)
-                          </span>
+                          <span>🌱 PHÂN TÍCH TỪ AI</span>
                         </div>
-                        <div
-                          className="ai-advice-body"
-                          dangerouslySetInnerHTML={{
-                            __html: activeReviewAdvice,
-                          }}
-                        />
+
+                        {activeReviewAdvice && (
+                          <div className="ai-advice-body">
+                            {/* Điểm số */}
+
+                            <div className="ai-score-row">
+                              <div className="score-card">
+                                <p>💛 Thấu hiểu</p>
+
+                                <h2>{activeReviewAdvice.understanding}%</h2>
+                              </div>
+
+                              <div className="score-card">
+                                <p>🤝 Tin tưởng</p>
+
+                                <h2>{activeReviewAdvice.trust}%</h2>
+                              </div>
+
+                              <div className="score-card">
+                                <p>⚠️ Xung đột</p>
+
+                                <h2>{activeReviewAdvice.conflict}%</h2>
+                              </div>
+                            </div>
+
+                            {/* Điểm giống */}
+
+                            <div className="advice-section">
+                              <h3>🌿 Điểm chung</h3>
+
+                              <p>{activeReviewAdvice.similarity}</p>
+                            </div>
+
+                            {/* Lời khuyên phụ huynh */}
+
+                            <div className="advice-section">
+                              <h3>👨‍👩‍👧 Cho phụ huynh</h3>
+
+                              <p>{activeReviewAdvice.parentAdvice}</p>
+                            </div>
+
+                            {/* Lời khuyên học sinh */}
+
+                            <div className="advice-section">
+                              <h3>🎓 Cho học sinh</h3>
+
+                              <p>{activeReviewAdvice.childAdvice}</p>
+                            </div>
+
+                            {/* Hành động */}
+
+                            <div className="advice-section">
+                              <h3>✅ Hành động đề xuất</h3>
+
+                              <p>{activeReviewAdvice.action}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div style={{ textAlign: "center", marginTop: "30px" }}>
@@ -5555,7 +5605,7 @@ function App() {
                   </div>
 
                   {/* AI Advice body */}
-                  <div
+                  {/* <div
                     style={{
                       backgroundColor: "var(--bg-card)",
                       border: "1px solid var(--border)",
@@ -5566,7 +5616,7 @@ function App() {
                       color: "var(--text)",
                     }}
                     dangerouslySetInnerHTML={{ __html: aiAdviceHTML }}
-                  />
+                  /> */}
                 </div>
               );
             })}
