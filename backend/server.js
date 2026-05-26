@@ -80,6 +80,82 @@ app.post("/api/conclusions", async (req, res) => {
 });
 
 // ==========================================
+// API PHÒNG (ROOM) - MONGODB
+// ==========================================
+
+// 1. Lấy danh sách tất cả các phòng (để Frontend tải vào biến `rooms`)
+app.get("/api/rooms", async (req, res) => {
+  try {
+    const rooms = await Room.find({});
+    res.json({ success: true, data: rooms });
+  } catch (error) {
+    console.error("Lỗi lấy danh sách phòng:", error);
+    res.status(500).json({ error: "Lỗi máy chủ" });
+  }
+});
+
+// 2. Tạo hoặc ghi đè toàn bộ một phòng (Dùng chung cho tạo và join để đơn giản hóa theo logic Frontend hiện tại)
+app.post("/api/rooms", async (req, res) => {
+  try {
+    const roomData = req.body;
+    
+    if (!roomData.id) {
+      return res.status(400).json({ error: "Thiếu ID phòng" });
+    }
+
+    // Upsert: cập nhật nếu tồn tại, tạo mới nếu chưa
+    const savedRoom = await Room.findOneAndUpdate(
+      { id: roomData.id },
+      { $set: roomData },
+      { new: true, upsert: true }
+    );
+    
+    res.status(201).json({ success: true, data: savedRoom });
+  } catch (error) {
+    console.error("Lỗi lưu phòng:", error);
+    res.status(500).json({ error: "Lỗi máy chủ khi lưu phòng" });
+  }
+});
+
+// 3. Lấy thông tin 1 phòng
+app.get("/api/rooms/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const room = await Room.findOne({ id });
+    if (!room) {
+      return res.status(404).json({ error: "Không tìm thấy phòng" });
+    }
+    res.json({ success: true, data: room });
+  } catch (error) {
+    console.error("Lỗi lấy thông tin phòng:", error);
+    res.status(500).json({ error: "Lỗi máy chủ" });
+  }
+});
+
+// 4. Cập nhật phòng (trạng thái, thành viên, câu hỏi)
+app.put("/api/rooms/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body; 
+    
+    const room = await Room.findOneAndUpdate(
+      { id },
+      { $set: updateData },
+      { new: true }
+    );
+    
+    if (!room) {
+      return res.status(404).json({ error: "Không tìm thấy phòng để cập nhật" });
+    }
+    
+    res.json({ success: true, data: room });
+  } catch (error) {
+    console.error("Lỗi cập nhật phòng:", error);
+    res.status(500).json({ error: "Lỗi máy chủ khi cập nhật phòng" });
+  }
+});
+
+// ==========================================
 // API AUTHENTICATION (ĐĂNG KÝ, ĐĂNG NHẬP)
 // ==========================================
 
@@ -218,10 +294,40 @@ app.put("/api/auth/profile", async (req, res) => {
         age: user.age,
         gender: user.gender,
         birthday: user.birthday,
+        emotionLogs: user.emotionLogs,
+        challengeProgress: user.challengeProgress,
+        savedConclusions: user.savedConclusions
       },
     });
   } catch (error) {
     console.error("Lỗi cập nhật profile:", error);
     res.status(500).json({ error: "Đã xảy ra lỗi trên máy chủ." });
+  }
+});
+
+// 4. Đồng bộ dữ liệu cá nhân (Nhật ký, Thử thách, Lưu trữ)
+app.put("/api/auth/sync", async (req, res) => {
+  const { email, emotionLogs, challengeProgress, savedConclusions } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email là bắt buộc để đồng bộ." });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "Không tìm thấy tài khoản." });
+    }
+
+    if (emotionLogs !== undefined) user.emotionLogs = emotionLogs;
+    if (challengeProgress !== undefined) user.challengeProgress = challengeProgress;
+    if (savedConclusions !== undefined) user.savedConclusions = savedConclusions;
+
+    await user.save();
+
+    res.json({ success: true, message: "Đồng bộ thành công." });
+  } catch (error) {
+    console.error("Lỗi đồng bộ dữ liệu:", error);
+    res.status(500).json({ error: "Đã xảy ra lỗi máy chủ khi đồng bộ." });
   }
 });

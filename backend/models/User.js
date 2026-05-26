@@ -36,6 +36,18 @@ const userSchema = new mongoose.Schema({
   mascotName: {
     type: String,
     default: "Khách",
+  },
+  emotionLogs: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: []
+  },
+  challengeProgress: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: []
+  },
+  savedConclusions: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: []
   }
 }, { timestamps: true });
 

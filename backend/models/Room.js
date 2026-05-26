@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const roomSchema = new mongoose.Schema({
-  roomId: { type: String, required: true, unique: true },
+  id: { type: String, required: true, unique: true }, // Frontend uses 'id' instead of 'roomId'
   name: { type: String, required: true },
   password: { type: String, required: true },
   status: { 
@@ -10,22 +10,15 @@ const roomSchema = new mongoose.Schema({
     default: 'waiting' 
   },
   
-  // Thành viên
+  // Quyền làm chủ phòng
   creatorName: { type: String, required: true },
-  creatorRole: { type: String, enum: ['parent', 'child'], required: true },
-  joinerName: { type: String },
-  joinerRole: { type: String, enum: ['parent', 'child'] },
+  
+  // Danh sách thành viên (lưu động bằng JSON)
+  members: { type: [mongoose.Schema.Types.Mixed], default: [] },
   
   // Dữ liệu bài test
-  compiledQuestions: [{
-    text: String,
-    creator: String
-  }],
-  
-  answers: {
-    creator: { type: Map, of: new mongoose.Schema({ text: String, emotion: String }, { _id: false }) },
-    joiner: { type: Map, of: new mongoose.Schema({ text: String, emotion: String }, { _id: false }) }
-  },
+  compiledQuestions: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  currentReviewIndex: { type: Number, default: 0 },
 
   createdAt: { type: Date, default: Date.now }
 });

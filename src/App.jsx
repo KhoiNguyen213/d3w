@@ -224,6 +224,7 @@ function App() {
   const [showAuthAlertModal, setShowAuthAlertModal] = useState(false);
   const [authAlertTitle, setAuthAlertTitle] = useState("");
   const [authAlertMessage, setAuthAlertMessage] = useState("");
+  const [authAlertIcon, setAuthAlertIcon] = useState("⚠️");
   const [authAlertRedirect, setAuthAlertRedirect] = useState(null);
 
   // --- STATE BANNER TRÍCH DẪN NGẪU NHIÊN ---
@@ -415,7 +416,7 @@ function App() {
     }
 
     // Load tất cả các phòng
-    loadRoomsFromStorage();
+    // Load tất cả các phòng đã chuyển sang useEffect riêng có polling
 
     // Sinh ngẫu nhiên trích dẫn
     const randIndex = Math.floor(Math.random() * COMFORT_QUOTES.length);
@@ -478,42 +479,39 @@ function App() {
     }
   }, [currentUser, currentView]);
 
-  // Đọc danh sách phòng từ LocalStorage
-  const loadRoomsFromStorage = () => {
-    const storedRooms = localStorage.getItem("HN_rooms");
-    if (storedRooms) {
-      const parsedRooms = JSON.parse(storedRooms);
-      setRooms(parsedRooms);
+  // Đọc danh sách phòng từ MongoDB
+  const loadRoomsFromAPI = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/rooms`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.success) {
+        const parsedRooms = data.data;
+        setRooms(parsedRooms);
 
-      // Đồng bộ phòng hiện tại nếu đang trong phòng
-      const activeRoomId = localStorage.getItem("HN_active_room_id");
-      if (activeRoomId) {
-        const found = parsedRooms.find((r) => r.id === activeRoomId);
-        if (found) {
-          setActiveRoom(found);
+        // Đồng bộ phòng hiện tại nếu đang trong phòng
+        const activeRoomId = localStorage.getItem("HN_active_room_id");
+        if (activeRoomId) {
+          const found = parsedRooms.find((r) => r.id === activeRoomId);
+          if (found) {
+            setActiveRoom(found);
+          }
         }
       }
+    } catch (err) {
+      console.error("Lỗi lấy danh sách phòng:", err);
     }
   };
 
-  // Đồng bộ đa cửa sổ qua storage event và polling định kỳ để cực nhạy
+  // Đồng bộ qua polling định kỳ để cập nhật thay đổi từ server
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === "HN_rooms" || e.key === "HN_active_room_id") {
-        loadRoomsFromStorage();
-      }
-    };
-    window.addEventListener("storage", handleStorageChange);
+    loadRoomsFromAPI(); // Khởi chạy ngay lần đầu
 
-    // Fallback Polling (1 giây một lần) để mượt mà tuyệt đối kể cả trên các trình duyệt cũ
     const interval = setInterval(() => {
-      loadRoomsFromStorage();
-    }, 1000);
+      loadRoomsFromAPI();
+    }, 1500); // Gọi mỗi 1.5s để đồng bộ giữa 2 máy tính
 
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   // ============================================================================
@@ -688,25 +686,33 @@ function App() {
 
       const loggedInUser = {
         email: data.user.email,
-
         name: data.user.name,
-
         mascot: data.user.mascot || avatar.mascot,
-
         mascotName: data.user.mascotName || avatar.name,
-
         avatarColor: avatar.color,
-
         age: data.user.age || "",
-
         gender: data.user.gender || "",
-
         birthday: data.user.birthday || "",
       };
 
       setCurrentUser(loggedInUser);
-
       localStorage.setItem("HN_current_user", JSON.stringify(loggedInUser));
+
+      if (data.user.emotionLogs) {
+        setEmotionLogs(data.user.emotionLogs);
+        localStorage.setItem("HN_emotion_logs", JSON.stringify(data.user.emotionLogs));
+      }
+      if (data.user.challengeProgress) {
+        setChallengeProgress(data.user.challengeProgress);
+        localStorage.setItem("HN_challenge_progress", JSON.stringify(data.user.challengeProgress));
+        if (data.user.challengeProgress.length > 0) {
+          localStorage.setItem("HN_last_challenge_date", new Date().toISOString().split("T")[0]);
+        }
+      }
+      if (data.user.savedConclusions) {
+        setSavedConclusions(data.user.savedConclusions);
+        localStorage.setItem("HN_saved_conclusions", JSON.stringify(data.user.savedConclusions));
+      }
 
       navigateTo("home");
     } catch (err) {
@@ -714,6 +720,16 @@ function App() {
 
       setAuthError(err.message);
     }
+  };
+
+  const syncUserDataToAPI = (dataToSync) => {
+    const user = JSON.parse(localStorage.getItem("HN_current_user"));
+    if (!user) return;
+    fetch(`${API_URL}/api/auth/sync`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email, ...dataToSync })
+    }).catch(err => console.error("Lỗi đồng bộ dữ liệu cá nhân:", err));
   };
 
   const handleLogout = () => {
@@ -819,19 +835,30 @@ function App() {
   // CÁC HÀM XỬ LÝ PHÒNG TƯƠNG TÁC (ROOM LOGIC)
   // ============================================================================
 
-  // Cập nhật và lưu danh sách phòng đồng bộ
-  const updateRoomsInStorage = (updatedRooms) => {
+  // Cập nhật và lưu danh sách phòng đồng bộ lên MongoDB
+  const updateRoomsInAPI = (updatedRooms, modifiedRoomId = null) => {
     setRooms(updatedRooms);
-    localStorage.setItem("HN_rooms", JSON.stringify(updatedRooms));
 
+    let currentActive = null;
     if (activeRoom) {
-      const currentActive = updatedRooms.find((r) => r.id === activeRoom.id);
+      currentActive = updatedRooms.find((r) => r.id === activeRoom.id);
       if (currentActive) {
         setActiveRoom(currentActive);
       } else {
         setActiveRoom(null);
         localStorage.removeItem("HN_active_room_id");
       }
+    }
+
+    const roomToSyncId = modifiedRoomId || (currentActive ? currentActive.id : updatedRooms[updatedRooms.length - 1]?.id);
+    const roomToSync = updatedRooms.find((r) => r.id === roomToSyncId);
+
+    if (roomToSync) {
+      fetch(`${API_URL}/api/rooms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(roomToSync)
+      }).catch(err => console.error("Lỗi lưu phòng:", err));
     }
   };
 
@@ -846,6 +873,7 @@ function App() {
       setAuthAlertMessage(
         "Bạn cần đăng nhập tài khoản trước khi tạo phòng kết nối để hệ thống ghi nhớ lịch sử thấu cảm của gia đình bạn.",
       );
+      setAuthAlertIcon("⚠️");
       setAuthAlertRedirect("login");
       setShowAuthAlertModal(true);
       return;
@@ -861,6 +889,7 @@ function App() {
       setAuthAlertMessage(
         "Vui lòng nhập đầy đủ các thông tin: Tên phòng kết nối, Mật khẩu phòng bảo mật và Tên hiển thị của bạn.",
       );
+      setAuthAlertIcon("⚠️");
       setAuthAlertRedirect(null);
       setShowAuthAlertModal(true);
       return;
@@ -901,7 +930,7 @@ function App() {
     };
 
     const updatedRooms = [...rooms, newRoom];
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
 
     // Vào phòng trực tiếp với tư cách người tạo
     localStorage.setItem("HN_active_room_id", newId);
@@ -932,6 +961,7 @@ function App() {
       setAuthAlertMessage(
         "Vui lòng điền đầy đủ các thông tin: Mã phòng kết nối (ID), Mật khẩu phòng và Tên hiển thị của bạn.",
       );
+      setAuthAlertIcon("⚠️");
       setAuthAlertRedirect(null);
       setShowAuthAlertModal(true);
       return;
@@ -973,7 +1003,7 @@ function App() {
 
     const updatedRooms = [...rooms];
     updatedRooms[foundRoomIndex] = updatedRoom;
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
 
     localStorage.setItem("HN_active_room_id", room.id);
     setActiveRoom(updatedRoom);
@@ -1062,11 +1092,13 @@ function App() {
 
     setSavedConclusions(updated);
     localStorage.setItem("HN_saved_conclusions", JSON.stringify(updated));
+    syncUserDataToAPI({ savedConclusions: updated });
 
     setAuthAlertTitle("Lưu Trữ Thành Công 🌸");
     setAuthAlertMessage(
       `Báo cáo thấu cảm của phòng "${room.name}" đã được lưu trữ an toàn trong kho tư liệu của bạn.`,
     );
+    setAuthAlertIcon("💖");
     setAuthAlertRedirect(null);
     setShowAuthAlertModal(true);
   };
@@ -1076,6 +1108,7 @@ function App() {
     const updated = savedConclusions.filter((c) => c.id !== conclusionId);
     setSavedConclusions(updated);
     localStorage.setItem("HN_saved_conclusions", JSON.stringify(updated));
+    syncUserDataToAPI({ savedConclusions: updated });
   };
 
   const handleQuickJoinSavedRoom = (room) => {
@@ -1142,7 +1175,7 @@ function App() {
       return r;
     });
 
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
     setNewQuestionText("");
   };
 
@@ -1166,7 +1199,7 @@ function App() {
       }
       return r;
     });
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
   };
 
   // Bấm Hoàn thành biên soạn câu hỏi của cá nhân
@@ -1185,7 +1218,7 @@ function App() {
       return r;
     });
 
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
   };
 
   // Chủ phòng bấm Bắt đầu Bài Test Chung
@@ -1211,7 +1244,7 @@ function App() {
       return r;
     });
 
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
   };
 
   // ============================================================================
@@ -1265,7 +1298,7 @@ function App() {
       return r;
     });
 
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
 
     // Tiến hành câu hỏi tiếp theo hoặc ở trạng thái chờ
     if (currentQuestionIndex < activeRoom.compiledQuestions.length - 1) {
@@ -1302,7 +1335,7 @@ function App() {
       return r;
     });
 
-    updateRoomsInStorage(updatedRooms);
+    updateRoomsInAPI(updatedRooms);
   };
 
   // ============================================================================
@@ -1451,9 +1484,13 @@ function App() {
         })
         .catch(console.error);
     } else {
-      alert(
-        "Tính năng chia sẻ chưa được hỗ trợ trên thiết bị của bạn. Bạn có thể copy link trang web nhé!",
+      setAuthAlertTitle("Thông Báo");
+      setAuthAlertMessage(
+        "Tính năng chia sẻ chưa được hỗ trợ trên thiết bị của bạn. Bạn có thể copy link trang web nhé!"
       );
+      setAuthAlertIcon("🔗");
+      setAuthAlertRedirect(null);
+      setShowAuthAlertModal(true);
     }
   };
 
@@ -3772,9 +3809,14 @@ function App() {
                         "HN_emotion_logs",
                         JSON.stringify(newLogs),
                       );
-                      alert(
-                        `Đã lưu cảm xúc: ${emo.label}. ${emo.id === "stressed" || emo.id === "sad" || emo.id === "angry" ? "Mọi chuyện rồi sẽ ổn thôi, hãy dành chút thời gian nghỉ ngơi nhé!" : "Tuyệt vời, chúc bạn một ngày tốt lành!"}`,
+                      syncUserDataToAPI({ emotionLogs: newLogs });
+                      setAuthAlertTitle("Nhật Ký Cảm Xúc");
+                      setAuthAlertMessage(
+                        `Đã lưu cảm xúc: ${emo.label}. ${emo.id === "stressed" || emo.id === "sad" || emo.id === "angry" ? "Mọi chuyện rồi sẽ ổn thôi, hãy dành chút thời gian nghỉ ngơi nhé!" : "Tuyệt vời, chúc bạn một ngày tốt lành!"}`
                       );
+                      setAuthAlertIcon(emo.icon);
+                      setAuthAlertRedirect(null);
+                      setShowAuthAlertModal(true);
                     }}
                   >
                     <span style={{ fontSize: "32px" }}>{emo.icon}</span>
@@ -4025,9 +4067,14 @@ function App() {
                         JSON.stringify(newProgress),
                       );
                       localStorage.setItem("HN_last_challenge_date", todayStr);
-                      alert(
-                        "Tuyệt vời! Bạn đã hoàn thành nhiệm vụ ngày hôm nay. Hãy duy trì thói quen này nhé!",
+                      syncUserDataToAPI({ challengeProgress: newProgress });
+                      setAuthAlertTitle("Thử Thách 7 Ngày");
+                      setAuthAlertMessage(
+                        "Tuyệt vời! Bạn đã hoàn thành nhiệm vụ ngày hôm nay. Hãy duy trì thói quen này nhé!"
                       );
+                      setAuthAlertIcon("✨");
+                      setAuthAlertRedirect(null);
+                      setShowAuthAlertModal(true);
                     }}
                   >
                     Đã Hoàn Thành ✨
@@ -5301,8 +5348,8 @@ function App() {
         >
           <div
             style={{
-              backgroundColor: "#FAEDCD",
-              border: "3px solid #D4A373",
+              backgroundColor: "var(--card-bg)",
+              border: "3px solid var(--primary)",
               borderRadius: "28px",
               padding: "32px 24px",
               maxWidth: "380px",
@@ -5320,7 +5367,7 @@ function App() {
                 lineHeight: 1,
               }}
             >
-              ⚠️
+              {authAlertIcon}
             </div>
 
             <h3
@@ -5328,7 +5375,7 @@ function App() {
                 fontFamily: "var(--font-heading)",
                 fontWeight: 800,
                 fontSize: "22px",
-                color: "#5C3D2E",
+                color: "var(--secondary)",
                 marginBottom: "12px",
               }}
             >
@@ -5338,7 +5385,7 @@ function App() {
             <p
               style={{
                 fontSize: "15px",
-                color: "#5C3D2E",
+                color: "var(--text-main)",
                 fontWeight: 600,
                 lineHeight: 1.5,
                 marginBottom: "26px",
