@@ -295,7 +295,7 @@ function App() {
     "Con biết bố mẹ muốn tốt cho con, nhưng lịch học thêm dày đặc làm con mệt mỏi lắm. Nhiều lúc con chỉ muốn được nghỉ ngơi chơi thể thao một chút mà bố mẹ mắng lười học.",
   );
   const [sandboxChildEmo, setSandboxChildEmo] = useState("stressed");
-  const [sandboxResult, setSandboxResult] = useState("");
+  const [sandboxResult, setSandboxResult] = useState(null);
 
   // ============================================================================
   // KHỞI TẠO & ĐỒNG BỘ THỜI GIAN THỰC (LOCAL STORAGE EVENT SYNC)
@@ -1322,26 +1322,56 @@ function App() {
   };
 
   const triggerSandboxAI = async () => {
-    setSandboxResult("<p>Đang phân tích bằng hệ thống AI RAG...</p>");
+    setSandboxResult({
+      loading: true,
+    });
+
     try {
       const response = await fetch(`${API_URL}/api/analyze-understanding`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
         body: JSON.stringify({
           question: sandboxQuestion,
+
           parentAns: sandboxParentAns,
+
           parentEmo: sandboxParentEmo,
+
           childAns: sandboxChildAns,
+
           childEmo: sandboxChildEmo,
         }),
       });
+
       const data = await response.json();
+
+      console.log("AI RESPONSE:", data);
+
       setSandboxResult(data);
     } catch (e) {
       console.error(e);
-      setSandboxResult(
-        '<p style="color:red;">Không thể kết nối dịch vụ AI. Vui lòng thử lại.</p>',
-      );
+
+      setSandboxResult({
+        success: false,
+
+        understanding: 0,
+
+        trust: 0,
+
+        conflict: 0,
+
+        similarity: "",
+
+        parentAdvice: "Không thể kết nối AI",
+
+        childAdvice: "",
+
+        action: "Thử lại sau",
+      });
     }
   };
 
