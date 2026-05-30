@@ -1,4 +1,6 @@
 import express from "express";
+import http from "http";
+import { WebSocketServer } from "ws";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -12,6 +14,41 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Tạo HTTP server từ Express app để gắn WebSocket
+const server = http.createServer(app);
+
+// Tạo WebSocket Server gắn vào HTTP server, path /ws/rooms
+const wss = new WebSocketServer({ server, path: "/ws/rooms" });
+
+// Hàm broadcast dữ liệu phòng tới tất cả client đang kết nối
+const broadcastRooms = async () => {
+  try {
+    const rooms = await Room.find({});
+    const message = JSON.stringify({ type: "rooms", rooms });
+    wss.clients.forEach((client) => {
+      if (client.readyState === 1) { // WebSocket.OPEN
+        client.send(message);
+      }
+    });
+  } catch (err) {
+    console.error("Lỗi broadcast rooms:", err);
+  }
+};
+
+// Khi client mới kết nối, gửi danh sách phòng hiện tại
+wss.on("connection", async (ws) => {
+  console.log("WebSocket client connected");
+  try {
+    const rooms = await Room.find({});
+    ws.send(JSON.stringify({ type: "rooms", rooms }));
+  } catch (err) {
+    console.error("Lỗi gửi rooms cho client mới:", err);
+  }
+  ws.on("close", () => {
+    console.log("WebSocket client disconnected");
+  });
+});
 
 // Kết nối MongoDB
 const connectDB = async () => {
@@ -36,8 +73,8 @@ connectDB();
 // Khởi động Server
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT} (HTTP + WebSocket)`);
 });
 
 // ==========================================
@@ -111,6 +148,8 @@ app.post("/api/rooms", async (req, res) => {
     );
     
     res.status(201).json({ success: true, data: savedRoom });
+    // Broadcast cập nhật phòng tới tất cả client qua WebSocket
+    broadcastRooms();
   } catch (error) {
     console.error("Lỗi lưu phòng:", error);
     res.status(500).json({ error: "Lỗi máy chủ khi lưu phòng" });
@@ -149,6 +188,8 @@ app.put("/api/rooms/:id", async (req, res) => {
     }
     
     res.json({ success: true, data: room });
+    // Broadcast cập nhật phòng tới tất cả client qua WebSocket
+    broadcastRooms();
   } catch (error) {
     console.error("Lỗi cập nhật phòng:", error);
     res.status(500).json({ error: "Lỗi máy chủ khi cập nhật phòng" });
@@ -158,6 +199,38 @@ app.put("/api/rooms/:id", async (req, res) => {
 // ==========================================
 // API AUTHENTICATION (ĐĂNG KÝ, ĐĂNG NHẬP)
 // ==========================================
+
+// Endpoint nhẹ để background refresh profile (không cần password)
+app.get("/api/auth/profile-refresh", async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+    return res.status(400).json({ error: "Email là bắt buộc." });
+  }
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "Không tìm thấy tài khoản." });
+    }
+    res.json({
+      success: true,
+      user: {
+        email: user.email,
+        name: user.name,
+        mascot: user.mascot,
+        mascotName: user.mascotName,
+        age: user.age,
+        gender: user.gender,
+        birthday: user.birthday,
+        emotionLogs: user.emotionLogs,
+        challengeProgress: user.challengeProgress,
+        savedConclusions: user.savedConclusions,
+      },
+    });
+  } catch (error) {
+    console.error("Lỗi profile refresh:", error);
+    res.status(500).json({ error: "Lỗi máy chủ." });
+  }
+});
 
 // 1. Đăng ký tài khoản
 app.post("/api/auth/register", async (req, res) => {

@@ -367,10 +367,49 @@ function App() {
     setTheme(savedTheme);
     document.documentElement.setAttribute("data-theme", savedTheme);
 
-    // User session
+    // User session - Cache-first strategy: tải ngay từ localStorage, sau đó refresh ngầm từ API
     const savedUser = localStorage.getItem("HN_current_user");
     if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      setCurrentUser(parsedUser);
+
+      // Nạp dữ liệu cá nhân từ cache ngay lập tức
+      const cachedEmotions = localStorage.getItem("HN_emotion_logs");
+      if (cachedEmotions) setEmotionLogs(JSON.parse(cachedEmotions));
+      const cachedChallenge = localStorage.getItem("HN_challenge_progress");
+      if (cachedChallenge) setChallengeProgress(JSON.parse(cachedChallenge));
+      const cachedConclusions = localStorage.getItem("HN_saved_conclusions");
+      if (cachedConclusions) setSavedConclusions(JSON.parse(cachedConclusions));
+
+      // Background refresh: cập nhật dữ liệu mới nhất từ server (không chặn UI)
+      fetch(`${API_URL}/api/auth/profile-refresh?email=${encodeURIComponent(parsedUser.email)}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.user) {
+            const avatar = getAvatarByEmail(data.user.email);
+            const refreshedUser = {
+              email: data.user.email,
+              name: data.user.name,
+              mascot: data.user.mascot || avatar.mascot,
+              mascotName: data.user.mascotName || avatar.name,
+              avatarColor: avatar.color,
+              age: data.user.age || "",
+              gender: data.user.gender || "",
+              birthday: data.user.birthday || "",
+            };
+            setCurrentUser(refreshedUser);
+            localStorage.setItem("HN_current_user", JSON.stringify(refreshedUser));
+            if (data.user.emotionLogs) {
+              setEmotionLogs(data.user.emotionLogs);
+              localStorage.setItem("HN_emotion_logs", JSON.stringify(data.user.emotionLogs));
+            }
+            if (data.user.savedConclusions) {
+              setSavedConclusions(data.user.savedConclusions);
+              localStorage.setItem("HN_saved_conclusions", JSON.stringify(data.user.savedConclusions));
+            }
+          }
+        })
+        .catch(() => {}); // Bỏ qua lỗi nếu offline
     }
 
     // Bookmarked/Saved Rooms
@@ -495,15 +534,77 @@ function App() {
     }
   };
 
-  // Đồng bộ qua polling định kỳ để cập nhật thay đổi từ server
+  // Real-time room sync via WebSocket (thay thế polling 1.5s)
   useEffect(() => {
-    loadRoomsFromAPI(); // Khởi chạy ngay lần đầu
+    // Load lần đầu qua REST API để có dữ liệu ngay
+    loadRoomsFromAPI();
 
-    const interval = setInterval(() => {
-      loadRoomsFromAPI();
-    }, 1500); // Gọi mỗi 1.5s để đồng bộ giữa 2 máy tính
+    // Kết nối WebSocket
+    const wsProtocol = API_URL.startsWith('https') ? 'wss' : 'ws';
+    const wsHost = new URL(API_URL).host;
+    const wsUrl = `${wsProtocol}://${wsHost}/ws/rooms`;
 
-    return () => clearInterval(interval);
+    let ws = null;
+    let reconnectTimeout = null;
+    let reconnectDelay = 1000; // Bắt đầu 1s, tăng dần
+    let isMounted = true;
+
+    const connect = () => {
+      if (!isMounted) return;
+      try {
+        ws = new WebSocket(wsUrl);
+      } catch (err) {
+        console.error('WebSocket creation error:', err);
+        // Fallback: thử lại sau
+        reconnectTimeout = setTimeout(connect, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+        return;
+      }
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        reconnectDelay = 1000; // Reset delay khi kết nối thành công
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'rooms' && Array.isArray(data.rooms)) {
+            setRooms(data.rooms);
+            // Đồng bộ phòng đang hoạt động
+            const activeRoomId = localStorage.getItem('HN_active_room_id');
+            if (activeRoomId) {
+              const found = data.rooms.find((r) => r.id === activeRoomId);
+              if (found) {
+                setActiveRoom(found);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('WebSocket parse error:', err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected, reconnecting in', reconnectDelay, 'ms');
+        if (isMounted) {
+          reconnectTimeout = setTimeout(connect, reconnectDelay);
+          reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+        }
+      };
+    };
+
+    connect();
+
+    return () => {
+      isMounted = false;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (ws) ws.close();
+    };
   }, []);
 
   // ============================================================================
@@ -1344,16 +1445,6 @@ function App() {
     setContactName("");
     setContactEmail("");
     setContactMsg("");
-  };
-
-
-        parentAdvice: "Không thể kết nối AI",
-
-        childAdvice: "",
-
-        action: "Thử lại sau",
-      });
-    }
   };
 
   // Tạo hình đại diện Google/Gmail đẹp mắt dựa trên ký tự đầu tiên của email/tên
@@ -2489,10 +2580,6 @@ function App() {
               </div>
             </div>
 
-
-                </div>
-              </div>
-            </section> */}
           </div>
         )}
 
