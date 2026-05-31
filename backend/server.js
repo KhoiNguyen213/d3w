@@ -136,25 +136,38 @@ app.get("/api/rooms", async (req, res) => {
 // 2. Tạo hoặc ghi đè toàn bộ một phòng (Dùng chung cho tạo và join để đơn giản hóa theo logic Frontend hiện tại)
 app.post("/api/rooms", async (req, res) => {
   try {
+    console.log("ROOM DATA:");
+    console.log(JSON.stringify(req.body, null, 2));
+
     const roomData = req.body;
-    
+
     if (!roomData.id) {
       return res.status(400).json({ error: "Thiếu ID phòng" });
     }
 
-    // Upsert: cập nhật nếu tồn tại, tạo mới nếu chưa
     const savedRoom = await Room.findOneAndUpdate(
       { id: roomData.id },
       { $set: roomData },
-      { new: true, upsert: true }
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+      }
     );
-    
-    res.status(201).json({ success: true, data: savedRoom });
-    // Broadcast cập nhật phòng tới tất cả client qua WebSocket
+
+    res.status(201).json({
+      success: true,
+      data: savedRoom,
+    });
+
     broadcastRooms();
   } catch (error) {
-    console.error("Lỗi lưu phòng:", error);
-    res.status(500).json({ error: "Lỗi máy chủ khi lưu phòng" });
+    console.error("ROOM ERROR:");
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
 
