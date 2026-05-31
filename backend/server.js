@@ -9,7 +9,9 @@ import Room from "./models/Room.js";
 import Conclusion from "./models/Conclusion.js";
 import User from "./models/User.js";
 
-dotenv.config();
+if (!process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = "mongodb://localhost:27017/d3w";
+}
 
 const app = express();
 app.use(cors());
