@@ -522,19 +522,34 @@ function App() {
 
   // Đọc danh sách phòng từ MongoDB
   const loadRoomsFromAPI = async () => {
-    console.log("REST ROOMS:", data.data);
     try {
       const res = await fetch(`${API_URL}/api/rooms`);
-      if (!res.ok) return;
+
+      if (!res.ok) {
+        console.error("Không thể lấy danh sách phòng:", res.status);
+        return;
+      }
+
       const data = await res.json();
+
+      console.log("REST ROOMS:", data);
+
       if (data.success) {
-        const parsedRooms = data.data;
+        const parsedRooms = data.data || [];
+
         setRooms(parsedRooms);
 
         // Đồng bộ phòng hiện tại nếu đang trong phòng
         const activeRoomId = localStorage.getItem("HN_active_room_id");
+
         if (activeRoomId) {
-          const found = parsedRooms.find((r) => r.id === activeRoomId);
+          const found = parsedRooms.find(
+            (r) =>
+              r.id === activeRoomId ||
+              r._id === activeRoomId ||
+              r.roomId === activeRoomId,
+          );
+
           if (found) {
             setActiveRoom(found);
           }
@@ -544,7 +559,6 @@ function App() {
       console.error("Lỗi lấy danh sách phòng:", err);
     }
   };
-
   // Real-time room sync via WebSocket (thay thế polling 1.5s)
   useEffect(() => {
     // Load lần đầu qua REST API để có dữ liệu ngay
