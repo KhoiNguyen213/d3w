@@ -1,4 +1,4 @@
-import LoadingOverlay from "./components/LoadingOverlay";
+// import LoadingOverlay from "./components/LoadingOverlay";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 console.log("API:", API_URL);
@@ -247,7 +247,7 @@ function App() {
   const [rooms, setRooms] = useState([]);
   const [activeRoom, setActiveRoom] = useState(null);
   const [isRoomLoading, setIsRoomLoading] = useState(false);
-// Duplicate isRoomLoading removed
+  // Duplicate isRoomLoading removed
   const [savedConclusions, setSavedConclusions] = useState([]);
   const [activeViewedConclusion, setActiveViewedConclusion] = useState(null);
   const [activeReviewAdvice, setActiveReviewAdvice] = useState(null);
@@ -282,7 +282,6 @@ function App() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactMsg, setContactMsg] = useState("");
   const [contactSuccess, setContactSuccess] = useState("");
-
 
   // ============================================================================
   // KHỞI TẠO & ĐỒNG BỘ THỜI GIAN THỰC (LOCAL STORAGE EVENT SYNC)
@@ -327,33 +326,31 @@ function App() {
         };
 
         try {
-          const response = await fetch(
-            `${API_URL}/api/analyze-understanding`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                question: activeQ.text,
-                parentAns: parentText,
-                parentEmo: getModeEmotion(parents),
-                childAns: childText,
-                childEmo: getModeEmotion(children),
-              }),
-            },
-          );
+          const response = await fetch(`${API_URL}/api/analyze-understanding`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              question: activeQ.text,
+              parentAns: parentText,
+              parentEmo: getModeEmotion(parents),
+              childAns: childText,
+              childEmo: getModeEmotion(children),
+            }),
+          });
           const data = await response.json();
           setActiveReviewAdvice(data.adviceHTML);
         } catch (e) {
           console.error(e);
           setActiveReviewAdvice({
             success: false,
-            similarity: "Lỗi kết nối Backend (Node.js). Vui lòng kiểm tra server.",
+            similarity:
+              "Lỗi kết nối Backend (Node.js). Vui lòng kiểm tra server.",
             understanding: 0,
             trust: 0,
             conflict: 0,
             parentAdvice: "Không tải được dữ liệu.",
             childAdvice: "Không tải được dữ liệu.",
-            action: "Thử lại sau"
+            action: "Thử lại sau",
           });
         }
       }
@@ -383,9 +380,11 @@ function App() {
       if (cachedConclusions) setSavedConclusions(JSON.parse(cachedConclusions));
 
       // Background refresh: cập nhật dữ liệu mới nhất từ server (không chặn UI)
-      fetch(`${API_URL}/api/auth/profile-refresh?email=${encodeURIComponent(parsedUser.email)}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
+      fetch(
+        `${API_URL}/api/auth/profile-refresh?email=${encodeURIComponent(parsedUser.email)}`,
+      )
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
           if (data && data.user) {
             const avatar = getAvatarByEmail(data.user.email);
             const refreshedUser = {
@@ -399,14 +398,23 @@ function App() {
               birthday: data.user.birthday || "",
             };
             setCurrentUser(refreshedUser);
-            localStorage.setItem("HN_current_user", JSON.stringify(refreshedUser));
+            localStorage.setItem(
+              "HN_current_user",
+              JSON.stringify(refreshedUser),
+            );
             if (data.user.emotionLogs) {
               setEmotionLogs(data.user.emotionLogs);
-              localStorage.setItem("HN_emotion_logs", JSON.stringify(data.user.emotionLogs));
+              localStorage.setItem(
+                "HN_emotion_logs",
+                JSON.stringify(data.user.emotionLogs),
+              );
             }
             if (data.user.savedConclusions) {
               setSavedConclusions(data.user.savedConclusions);
-              localStorage.setItem("HN_saved_conclusions", JSON.stringify(data.user.savedConclusions));
+              localStorage.setItem(
+                "HN_saved_conclusions",
+                JSON.stringify(data.user.savedConclusions),
+              );
             }
           }
         })
@@ -541,7 +549,7 @@ function App() {
     loadRoomsFromAPI();
 
     // Kết nối WebSocket
-    const wsProtocol = API_URL.startsWith('https') ? 'wss' : 'ws';
+    const wsProtocol = API_URL.startsWith("https") ? "wss" : "ws";
     const wsHost = new URL(API_URL).host;
     const wsUrl = `${wsProtocol}://${wsHost}/ws/rooms`;
 
@@ -555,7 +563,7 @@ function App() {
       try {
         ws = new WebSocket(wsUrl);
       } catch (err) {
-        console.error('WebSocket creation error:', err);
+        console.error("WebSocket creation error:", err);
         // Fallback: thử lại sau
         reconnectTimeout = setTimeout(connect, reconnectDelay);
         reconnectDelay = Math.min(reconnectDelay * 2, 30000);
@@ -563,17 +571,17 @@ function App() {
       }
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log("WebSocket connected");
         reconnectDelay = 1000; // Reset delay khi kết nối thành công
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'rooms' && Array.isArray(data.rooms)) {
+          if (data.type === "rooms" && Array.isArray(data.rooms)) {
             setRooms(data.rooms);
             // Đồng bộ phòng đang hoạt động
-            const activeRoomId = localStorage.getItem('HN_active_room_id');
+            const activeRoomId = localStorage.getItem("HN_active_room_id");
             if (activeRoomId) {
               const found = data.rooms.find((r) => r.id === activeRoomId);
               if (found) {
@@ -582,16 +590,20 @@ function App() {
             }
           }
         } catch (err) {
-          console.error('WebSocket parse error:', err);
+          console.error("WebSocket parse error:", err);
         }
       };
 
       ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
+        console.error("WebSocket error:", err);
       };
 
       ws.onclose = () => {
-        console.log('WebSocket disconnected, reconnecting in', reconnectDelay, 'ms');
+        console.log(
+          "WebSocket disconnected, reconnecting in",
+          reconnectDelay,
+          "ms",
+        );
         if (isMounted) {
           reconnectTimeout = setTimeout(connect, reconnectDelay);
           reconnectDelay = Math.min(reconnectDelay * 2, 30000);
@@ -794,18 +806,30 @@ function App() {
 
       if (data.user.emotionLogs) {
         setEmotionLogs(data.user.emotionLogs);
-        localStorage.setItem("HN_emotion_logs", JSON.stringify(data.user.emotionLogs));
+        localStorage.setItem(
+          "HN_emotion_logs",
+          JSON.stringify(data.user.emotionLogs),
+        );
       }
       if (data.user.challengeProgress) {
         setChallengeProgress(data.user.challengeProgress);
-        localStorage.setItem("HN_challenge_progress", JSON.stringify(data.user.challengeProgress));
+        localStorage.setItem(
+          "HN_challenge_progress",
+          JSON.stringify(data.user.challengeProgress),
+        );
         if (data.user.challengeProgress.length > 0) {
-          localStorage.setItem("HN_last_challenge_date", new Date().toISOString().split("T")[0]);
+          localStorage.setItem(
+            "HN_last_challenge_date",
+            new Date().toISOString().split("T")[0],
+          );
         }
       }
       if (data.user.savedConclusions) {
         setSavedConclusions(data.user.savedConclusions);
-        localStorage.setItem("HN_saved_conclusions", JSON.stringify(data.user.savedConclusions));
+        localStorage.setItem(
+          "HN_saved_conclusions",
+          JSON.stringify(data.user.savedConclusions),
+        );
       }
 
       navigateTo("home");
@@ -822,8 +846,8 @@ function App() {
     fetch(`${API_URL}/api/auth/sync`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: user.email, ...dataToSync })
-    }).catch(err => console.error("Lỗi đồng bộ dữ liệu cá nhân:", err));
+      body: JSON.stringify({ email: user.email, ...dataToSync }),
+    }).catch((err) => console.error("Lỗi đồng bộ dữ liệu cá nhân:", err));
   };
 
   const handleLogout = () => {
@@ -944,7 +968,11 @@ function App() {
       }
     }
 
-    const roomToSyncId = modifiedRoomId || (currentActive ? currentActive.id : updatedRooms[updatedRooms.length - 1]?.id);
+    const roomToSyncId =
+      modifiedRoomId ||
+      (currentActive
+        ? currentActive.id
+        : updatedRooms[updatedRooms.length - 1]?.id);
     const roomToSync = updatedRooms.find((r) => r.id === roomToSyncId);
 
     if (roomToSync) {
@@ -952,7 +980,7 @@ function App() {
         const res = await fetch(`${API_URL}/api/rooms`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(roomToSync)
+          body: JSON.stringify(roomToSync),
         });
         if (!res.ok) {
           const err = await res.text();
@@ -966,7 +994,7 @@ function App() {
     }
   };
 
-    // Tạo phòng mới
+  // Tạo phòng mới
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     setRoomError("");
@@ -985,7 +1013,11 @@ function App() {
       }
 
       // 2. Validate required fields
-      if (!createRoomName.trim() || !createRoomPass.trim() || !createCreatorName.trim()) {
+      if (
+        !createRoomName.trim() ||
+        !createRoomPass.trim() ||
+        !createCreatorName.trim()
+      ) {
         setAuthAlertTitle("Thiếu Thông Tin Tạo Phòng");
         setAuthAlertMessage(
           "Vui lòng nhập đầy đủ các thông tin: Tên phòng, Mật khẩu phòng và Tên hiển thị của bạn.",
@@ -1039,7 +1071,10 @@ function App() {
       setActiveRoom(newRoom);
       localStorage.setItem("HN_active_room_id", newRoom.id);
       sessionStorage.setItem(`HN_room_role_${newRoom.id}`, "creator");
-      sessionStorage.setItem(`HN_room_username_${newRoom.id}`, createCreatorName);
+      sessionStorage.setItem(
+        `HN_room_username_${newRoom.id}`,
+        createCreatorName,
+      );
 
       // 8. Navigate to room view
       navigateTo("room");
@@ -1071,7 +1106,9 @@ function App() {
       // 2. Always fetch room fresh from API (works across devices)
       let room = null;
       try {
-        const response = await fetch(`${API_URL}/api/rooms/${joinRoomId.trim().toUpperCase()}`);
+        const response = await fetch(
+          `${API_URL}/api/rooms/${joinRoomId.trim().toUpperCase()}`,
+        );
         if (response.ok) {
           const fetched = await response.json();
           room = fetched.success ? fetched.data : fetched;
@@ -1082,12 +1119,17 @@ function App() {
 
       // 3. Fallback: search local rooms state
       if (!room) {
-        room = rooms.find((r) => r.id.toUpperCase() === joinRoomId.trim().toUpperCase()) || null;
+        room =
+          rooms.find(
+            (r) => r.id.toUpperCase() === joinRoomId.trim().toUpperCase(),
+          ) || null;
       }
 
       if (!room) {
         setAuthAlertTitle("Không Tìm Thấy Phòng");
-        setAuthAlertMessage("Không tìm thấy phòng với mã ID này. Vui lòng kiểm tra lại mã phòng.");
+        setAuthAlertMessage(
+          "Không tìm thấy phòng với mã ID này. Vui lòng kiểm tra lại mã phòng.",
+        );
         setAuthAlertIcon("⚠️");
         setAuthAlertRedirect(null);
         setShowAuthAlertModal(true);
@@ -1123,10 +1165,16 @@ function App() {
       }
 
       // 6. Persist the updated room to the API
-      await updateRoomsInAPI([...rooms.filter((r) => r.id !== room.id), updatedRoom], updatedRoom.id);
+      await updateRoomsInAPI(
+        [...rooms.filter((r) => r.id !== room.id), updatedRoom],
+        updatedRoom.id,
+      );
 
       // 7. Activate room and navigate
-      sessionStorage.setItem(`HN_room_username_${room.id}`, joinUserName.trim());
+      sessionStorage.setItem(
+        `HN_room_username_${room.id}`,
+        joinUserName.trim(),
+      );
       sessionStorage.setItem(`HN_room_role_${room.id}`, joinUserRole);
       localStorage.setItem("HN_active_room_id", room.id);
       setActiveRoom(updatedRoom);
@@ -1141,7 +1189,9 @@ function App() {
     } catch (err) {
       console.error("Lỗi tham gia phòng:", err);
       setAuthAlertTitle("Lỗi Tham Gia Phòng");
-      setAuthAlertMessage("Đã xảy ra lỗi khi tham gia phòng. Vui lòng thử lại.");
+      setAuthAlertMessage(
+        "Đã xảy ra lỗi khi tham gia phòng. Vui lòng thử lại.",
+      );
       setAuthAlertIcon("⚠️");
       setAuthAlertRedirect(null);
       setShowAuthAlertModal(true);
@@ -1560,7 +1610,7 @@ function App() {
     } else {
       setAuthAlertTitle("Thông Báo");
       setAuthAlertMessage(
-        "Tính năng chia sẻ chưa được hỗ trợ trên thiết bị của bạn. Bạn có thể copy link trang web nhé!"
+        "Tính năng chia sẻ chưa được hỗ trợ trên thiết bị của bạn. Bạn có thể copy link trang web nhé!",
       );
       setAuthAlertIcon("🔗");
       setAuthAlertRedirect(null);
@@ -2614,7 +2664,6 @@ function App() {
                 </p>
               </div>
             </div>
-
           </div>
         )}
 
@@ -3724,7 +3773,7 @@ function App() {
                       syncUserDataToAPI({ emotionLogs: newLogs });
                       setAuthAlertTitle("Nhật Ký Cảm Xúc");
                       setAuthAlertMessage(
-                        `Đã lưu cảm xúc: ${emo.label}. ${emo.id === "stressed" || emo.id === "sad" || emo.id === "angry" ? "Mọi chuyện rồi sẽ ổn thôi, hãy dành chút thời gian nghỉ ngơi nhé!" : "Tuyệt vời, chúc bạn một ngày tốt lành!"}`
+                        `Đã lưu cảm xúc: ${emo.label}. ${emo.id === "stressed" || emo.id === "sad" || emo.id === "angry" ? "Mọi chuyện rồi sẽ ổn thôi, hãy dành chút thời gian nghỉ ngơi nhé!" : "Tuyệt vời, chúc bạn một ngày tốt lành!"}`,
                       );
                       setAuthAlertIcon(emo.icon);
                       setAuthAlertRedirect(null);
@@ -3982,7 +4031,7 @@ function App() {
                       syncUserDataToAPI({ challengeProgress: newProgress });
                       setAuthAlertTitle("Thử Thách 7 Ngày");
                       setAuthAlertMessage(
-                        "Tuyệt vời! Bạn đã hoàn thành nhiệm vụ ngày hôm nay. Hãy duy trì thói quen này nhé!"
+                        "Tuyệt vời! Bạn đã hoàn thành nhiệm vụ ngày hôm nay. Hãy duy trì thói quen này nhé!",
                       );
                       setAuthAlertIcon("✨");
                       setAuthAlertRedirect(null);
@@ -4922,7 +4971,14 @@ function App() {
                         </div>
 
                         {!activeReviewAdvice && (
-                          <div style={{ padding: "20px", textAlign: "center", fontStyle: "italic", color: "var(--text-light)" }}>
+                          <div
+                            style={{
+                              padding: "20px",
+                              textAlign: "center",
+                              fontStyle: "italic",
+                              color: "var(--text-light)",
+                            }}
+                          >
                             <p>Đang phân tích phản hồi bằng AI RAG...</p>
                           </div>
                         )}
