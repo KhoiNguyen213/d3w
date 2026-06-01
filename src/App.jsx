@@ -1418,59 +1418,63 @@ function App() {
     const qId = currentQuestionIndex;
 
     const updatedRooms = rooms.map((r) => {
-      if (r.id === activeRoom.id) {
-        const nextMembers = r.members.map((m) => {
-          if (m.name === myName) {
-            return {
-              ...m,
-              answers: {
-                ...m.answers,
-                [qId]: { text: tempAnswerText.trim(), emotion: tempEmotion },
-              },
-            };
-          }
-          return m;
-        });
+      if (r.id !== activeRoom.id) return r;
 
-        const nextRoomState = { ...r, members: nextMembers };
+      const nextMembers = r.members.map((m) => {
+        if (m.name !== myName) return m;
 
-        // Kiểm tra xem tab hiện tại đã hoàn thành toàn bộ câu hỏi chưa
-        const isLastQ = currentQuestionIndex === r.compiledQuestions.length - 1;
-        if (isLastQ) {
-          // Kiểm tra xem TẤT CẢ mọi người đã hoàn thành chưa
-          const totalQCount = r.compiledQuestions.length;
-          const allCompleted = nextMembers.every(
-            (m) => Object.keys(m.answers).length === totalQCount,
-          );
+        return {
+          ...m,
+          answers: {
+            ...(m.answers || {}),
+            [qId]: {
+              text: tempAnswerText.trim(),
+              emotion: tempEmotion,
+            },
+          },
+        };
+      });
 
-          if (allCompleted) {
-            // Tất cả đã làm xong bài kiểm tra -> Chuyển sang Giai đoạn 3 (review)
-            return {
-              ...nextRoomState,
-              status: "review",
-              currentReviewIndex: 0,
-            };
-          }
+      const nextRoomState = {
+        ...r,
+        members: nextMembers,
+      };
+
+      const isLastQ =
+        currentQuestionIndex === (r.compiledQuestions?.length || 0) - 1;
+
+      if (isLastQ) {
+        const totalQCount = r.compiledQuestions?.length || 0;
+
+        const allCompleted = nextMembers.every(
+          (m) => Object.keys(m.answers || {}).length >= totalQCount,
+        );
+
+        if (allCompleted) {
+          return {
+            ...nextRoomState,
+            status: "review",
+            currentReviewIndex: 0,
+          };
         }
-
-        return nextRoomState;
       }
-      return r;
+
+      return nextRoomState;
     });
 
     updateRoomsInAPI(updatedRooms);
 
-    // Tiến hành câu hỏi tiếp theo hoặc ở trạng thái chờ
     if (currentQuestionIndex < activeRoom.compiledQuestions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
-      // Load câu trả lời cũ nếu có, hoặc reset trống
+
       const myMember = activeRoom.members.find((m) => m.name === myName);
-      const existingAnswer = myMember?.answers[currentQuestionIndex + 1];
-      setTempAnswerText(existingAnswer ? existingAnswer.text : "");
-      setTempEmotion(existingAnswer ? existingAnswer.emotion : "hopeful");
+
+      const existingAnswer = myMember?.answers?.[currentQuestionIndex + 1];
+
+      setTempAnswerText(existingAnswer?.text || "");
+      setTempEmotion(existingAnswer?.emotion || "hopeful");
     } else {
-      // Đã hoàn thành câu cuối, chờ mọi người
-      setCurrentQuestionIndex(activeRoom.compiledQuestions.length); // Trigger waiting view inside room
+      setCurrentQuestionIndex(activeRoom.compiledQuestions.length);
     }
   };
 
