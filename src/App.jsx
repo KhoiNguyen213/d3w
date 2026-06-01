@@ -1,4 +1,4 @@
-// import LoadingOverlay from "./components/LoadingOverlay";
+import { useState, useEffect } from "react";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 console.log("API:", API_URL);
@@ -249,6 +249,7 @@ function App() {
   const [isRoomLoading, setIsRoomLoading] = useState(false);
   // Duplicate isRoomLoading removed
   const [savedConclusions, setSavedConclusions] = useState([]);
+  const [savedRoomIds, setSavedRoomIds] = useState([]);
   const [activeViewedConclusion, setActiveViewedConclusion] = useState(null);
   const [activeReviewAdvice, setActiveReviewAdvice] = useState(null);
 
@@ -873,8 +874,8 @@ function App() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/analyze-understanding`, {
-        method: "POST",
+      const res = await fetch(`${API_URL}/api/auth/update-profile`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: currentUser.email,
@@ -954,7 +955,7 @@ function App() {
   // ============================================================================
 
   // Cập nhật và lưu danh sách phòng đồng bộ lên MongoDB
-  const updateRoomsInAPI = async (updatedRooms, modifiedRoomId = null) => {
+  const updateRoomsInAPI = (updatedRooms, modifiedRoomId = null) => {
     setRooms(updatedRooms);
 
     let currentActive = null;
@@ -976,21 +977,11 @@ function App() {
     const roomToSync = updatedRooms.find((r) => r.id === roomToSyncId);
 
     if (roomToSync) {
-      try {
-        const res = await fetch(`${API_URL}/api/rooms`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(roomToSync),
-        });
-        if (!res.ok) {
-          const err = await res.text();
-          console.error("Lỗi lưu phòng:", err);
-          throw new Error(err);
-        }
-      } catch (err) {
-        console.error("Lỗi lưu phòng:", err);
-        throw err;
-      }
+      fetch(`${API_URL}/api/rooms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(roomToSync),
+      }).catch((err) => console.error("Lỗi lưu phòng:", err));
     }
   };
 
@@ -998,92 +989,90 @@ function App() {
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     setRoomError("");
+    // UI Loading overlay
+    const LoadingOverlay = () => (
+      <div className="loading-overlay">
+        <div className="spinner"></div>
+      </div>
+    );
+    // Loading indicator start
     setIsRoomLoading(true);
-    try {
-      // 1. Require authentication
-      if (!currentUser) {
-        setAuthAlertTitle("Yêu Cầu Đăng Nhập");
-        setAuthAlertMessage(
-          "Bạn cần đăng nhập tài khoản trước khi tạo phòng kết nối để hệ thống ghi nhớ lịch sử thấu cảm của gia đình bạn.",
-        );
-        setAuthAlertIcon("⚠️");
-        setAuthAlertRedirect("login");
-        setShowAuthAlertModal(true);
-        return;
-      }
-
-      // 2. Validate required fields
-      if (
-        !createRoomName.trim() ||
-        !createRoomPass.trim() ||
-        !createCreatorName.trim()
-      ) {
-        setAuthAlertTitle("Thiếu Thông Tin Tạo Phòng");
-        setAuthAlertMessage(
-          "Vui lòng nhập đầy đủ các thông tin: Tên phòng, Mật khẩu phòng và Tên hiển thị của bạn.",
-        );
-        setAuthAlertIcon("⚠️");
-        setAuthAlertRedirect(null);
-        setShowAuthAlertModal(true);
-        return;
-      }
-
-      // 3. Generate a unique room ID
-      let newId;
-      let isUnique = false;
-      while (!isUnique) {
-        const randNum = Math.floor(1000 + Math.random() * 9000);
-        newId = `HN-${randNum}`;
-        isUnique = !rooms.some((r) => r.id === newId);
-      }
-
-      // 4. Build the new room object
-      const newRoom = {
-        id: newId,
-        name: createRoomName,
-        password: createRoomPass,
-        status: "waiting", // 'waiting' | 'quiz' | 'review' | 'completed'
-        creatorName: createCreatorName,
-        members: [
-          {
-            name: createCreatorName,
-            role: createCreatorRole,
-            finished: false,
-            questions: [],
-            answers: {},
-          },
-        ],
-        compiledQuestions: [],
-        currentReviewIndex: 0,
-      };
-
-      // 5. Reset form fields
-      setCreateRoomName("");
-      setCreateRoomPass("");
-      setCreateCreatorName("");
-
-      // 6. Update state and persist to backend
-      const updatedRooms = [...rooms, newRoom];
-      setRooms(updatedRooms);
-      await updateRoomsInAPI(updatedRooms);
-
-      // 7. Activate the newly created room
-      setActiveRoom(newRoom);
-      localStorage.setItem("HN_active_room_id", newRoom.id);
-      sessionStorage.setItem(`HN_room_role_${newRoom.id}`, "creator");
-      sessionStorage.setItem(
-        `HN_room_username_${newRoom.id}`,
-        createCreatorName,
+    // 1. Yêu cầu đăng nhập để tạo phòng
+    if (!currentUser) {
+      setAuthAlertTitle("Yêu Cầu Đăng Nhập");
+      setAuthAlertMessage(
+        "Bạn cần đăng nhập tài khoản trước khi tạo phòng kết nối để hệ thống ghi nhớ lịch sử thấu cảm của gia đình bạn.",
       );
-
-      // 8. Navigate to room view
-      navigateTo("room");
-    } catch (err) {
-      console.error(err);
-      setRoomError("⚠️ Lỗi tạo phòng.");
-    } finally {
+      setAuthAlertIcon("⚠️");
+      setAuthAlertRedirect("login");
+      setShowAuthAlertModal(true);
       setIsRoomLoading(false);
+      return;
     }
+
+    // 2. Yêu cầu nhập đầy đủ thông tin phòng
+    if (
+      !createRoomName.trim() ||
+      !createRoomPass.trim() ||
+      !createCreatorName.trim()
+    ) {
+      setAuthAlertTitle("Thiếu Thông Tin Tạo Phòng");
+      setAuthAlertMessage(
+        "Vui lòng nhập đầy đủ các thông tin: Tên phòng kết nối, Mật khẩu phòng và Tên hiển thị của bạn.",
+      );
+      setAuthAlertIcon("⚠️");
+      setAuthAlertRedirect(null);
+      setShowAuthAlertModal(true);
+      setIsRoomLoading(false);
+      return;
+    }
+
+    // Tạo ID phòng độc nhất ngẫu nhiên: HN-XXXX
+    let newId;
+    let isUnique = false;
+    while (!isUnique) {
+      const randNum = Math.floor(1000 + Math.random() * 9000);
+      newId = `HN-${randNum}`;
+      isUnique = !rooms.some((r) => r.id === newId);
+    }
+
+    const newRoom = {
+      id: newId,
+      name: createRoomName,
+      password: createRoomPass,
+      status: "waiting", // 'waiting' | 'quiz' | 'review' | 'completed'
+      creatorName: createCreatorName,
+      members: [
+        {
+          name: createCreatorName,
+          role: createCreatorRole,
+          finished: false,
+          questions: [],
+          answers: {},
+        },
+      ],
+      compiledQuestions: [],
+      currentReviewIndex: 0,
+    };
+
+    // Reset form after creating room
+    setCreateRoomName("");
+    setCreateRoomPass("");
+    setCreateCreatorName("");
+    // Update rooms state and sync to API
+    const updatedRooms = [...rooms, newRoom];
+    setRooms(updatedRooms);
+    await updateRoomsInAPI(updatedRooms);
+    // Set active room and store active room id
+    setActiveRoom(newRoom);
+    localStorage.setItem("HN_active_room_id", newRoom.id);
+    // Store creator role for this room
+    sessionStorage.setItem(`HN_room_role_${newRoom.id}`, "creator");
+    // Store creator username for reference (already stored elsewhere maybe)
+    sessionStorage.setItem(`HN_room_username_${newRoom.id}`, createCreatorName);
+    // Navigate to room view
+    navigateTo("room");
+    setIsRoomLoading(false);
   };
 
   // Tham gia phòng có sẵn
@@ -1091,113 +1080,85 @@ function App() {
     e.preventDefault();
     setRoomError("");
     setIsRoomLoading(true);
-    try {
-      // 1. Validate input
-      if (!joinRoomId.trim() || !joinRoomPass.trim() || !joinUserName.trim()) {
-        setAuthAlertTitle("Thiếu Thông Tin Kết Nối");
-        setAuthAlertMessage(
-          "Vui lòng điền đầy đủ các thông tin: Mã phòng kết nối (ID), Mật khẩu phòng và Tên hiển thị của bạn.",
-        );
-        setAuthAlertRedirect(null);
-        setShowAuthAlertModal(true);
-        return;
-      }
-
-      // 2. Always fetch room fresh from API (works across devices)
-      let room = null;
-      try {
-        const response = await fetch(
-          `${API_URL}/api/rooms/${joinRoomId.trim().toUpperCase()}`,
-        );
-        if (response.ok) {
-          const fetched = await response.json();
-          room = fetched.success ? fetched.data : fetched;
-        }
-      } catch (e) {
-        console.error("Lỗi tìm phòng:", e);
-      }
-
-      // 3. Fallback: search local rooms state
-      if (!room) {
-        room =
-          rooms.find(
-            (r) => r.id.toUpperCase() === joinRoomId.trim().toUpperCase(),
-          ) || null;
-      }
-
-      if (!room) {
-        setAuthAlertTitle("Không Tìm Thấy Phòng");
-        setAuthAlertMessage(
-          "Không tìm thấy phòng với mã ID này. Vui lòng kiểm tra lại mã phòng.",
-        );
-        setAuthAlertIcon("⚠️");
-        setAuthAlertRedirect(null);
-        setShowAuthAlertModal(true);
-        return;
-      }
-
-      // 4. Check password
-      if (room.password !== joinRoomPass) {
-        setAuthAlertTitle("Sai Mật Khẩu");
-        setAuthAlertMessage("Mật khẩu phòng không đúng. Vui lòng thử lại.");
-        setAuthAlertIcon("⚠️");
-        setAuthAlertRedirect(null);
-        setShowAuthAlertModal(true);
-        return;
-      }
-
-      // 5. Add member if not already in the room
-      const existingMemberIndex = room.members.findIndex(
-        (m) => m.name.toLowerCase() === joinUserName.trim().toLowerCase(),
-      );
-      let updatedRoom = { ...room };
-      if (existingMemberIndex === -1) {
-        updatedRoom.members = [
-          ...room.members,
-          {
-            name: joinUserName.trim(),
-            role: joinUserRole,
-            finished: false,
-            questions: [],
-            answers: {},
-          },
-        ];
-      }
-
-      // 6. Persist the updated room to the API
-      await updateRoomsInAPI(
-        [...rooms.filter((r) => r.id !== room.id), updatedRoom],
-        updatedRoom.id,
-      );
-
-      // 7. Activate room and navigate
-      sessionStorage.setItem(
-        `HN_room_username_${room.id}`,
-        joinUserName.trim(),
-      );
-      sessionStorage.setItem(`HN_room_role_${room.id}`, joinUserRole);
-      localStorage.setItem("HN_active_room_id", room.id);
-      setActiveRoom(updatedRoom);
-      toggleBookmarkRoom(room.id, true);
-
-      // Reset form
-      setJoinRoomId("");
-      setJoinRoomPass("");
-      setJoinUserName("");
-
-      navigateTo("room");
-    } catch (err) {
-      console.error("Lỗi tham gia phòng:", err);
-      setAuthAlertTitle("Lỗi Tham Gia Phòng");
+    // Validate input
+    if (!joinRoomId.trim() || !joinRoomPass.trim() || !joinUserName.trim()) {
+      setAuthAlertTitle("Thiếu Thông Tin Kết Nối");
       setAuthAlertMessage(
-        "Đã xảy ra lỗi khi tham gia phòng. Vui lòng thử lại.",
+        "Vui lòng điền đầy đủ các thông tin: Mã phòng kết nối (ID), Mật khẩu phòng và Tên hiển thị của bạn.",
       );
-      setAuthAlertIcon("⚠️");
       setAuthAlertRedirect(null);
       setShowAuthAlertModal(true);
-    } finally {
       setIsRoomLoading(false);
+      return;
     }
+    // Find room index locally
+    let foundRoomIndex = rooms.findIndex(
+      (r) => r.id.toUpperCase() === joinRoomId.toUpperCase(),
+    );
+    let currentRooms = rooms;
+    if (foundRoomIndex === -1) {
+      try {
+        const response = await fetch(`${API_URL}/api/rooms/${joinRoomId}`);
+        if (response.ok) {
+          const fetched = await response.json();
+          const fetchedRoom = fetched.success ? fetched.data : fetched;
+          const updatedRooms = [...rooms, fetchedRoom];
+          await updateRoomsInAPI(updatedRooms);
+          setRooms(updatedRooms);
+          currentRooms = updatedRooms;
+          foundRoomIndex = updatedRooms.findIndex(
+            (r) => r.id.toUpperCase() === joinRoomId.toUpperCase(),
+          );
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      if (foundRoomIndex === -1) {
+        setRoomError("⚠️ Không tìm thấy phòng kiểm tra này.");
+        setIsRoomLoading(false);
+        return;
+      }
+    }
+    const room = currentRooms[foundRoomIndex];
+    if (room.password !== joinRoomPass) {
+      setRoomError("Mật khẩu phòng không đúng.");
+      setIsRoomLoading(false);
+      return;
+    }
+    // Kiểm tra xem đã có thành viên nào trùng tên chưa
+    const existingMemberIndex = room.members.findIndex(
+      (m) => m.name.toLowerCase() === joinUserName.toLowerCase(),
+    );
+    let updatedRoom = { ...room };
+    if (existingMemberIndex === -1) {
+      // Thêm thành viên mới
+      updatedRoom.members = [
+        ...room.members,
+        {
+          name: joinUserName,
+          role: joinUserRole,
+          finished: false,
+          questions: [],
+          answers: {},
+        },
+      ];
+    }
+    const updatedRooms = [...rooms];
+    updatedRooms[foundRoomIndex] = updatedRoom;
+    await updateRoomsInAPI(updatedRooms);
+    // Store joiner info
+    sessionStorage.setItem(`HN_room_username_${room.id}`, joinUserName);
+    sessionStorage.setItem(`HN_room_role_${room.id}`, joinUserRole);
+    localStorage.setItem("HN_active_room_id", room.id);
+    setActiveRoom(updatedRoom);
+    // Bookmark phòng này
+    toggleBookmarkRoom(room.id, true);
+    // Reset form
+    setJoinRoomId("");
+    setJoinRoomPass("");
+    setJoinUserName("");
+    navigateTo("room");
+    setIsRoomLoading(false);
   };
 
   // Rời phòng hiện tại
@@ -1942,8 +1903,8 @@ function App() {
         )}
 
         {/* ====================================================================
-            1. VIEW HOME (TRANG CHỦ + PHÒNG ĐIỀU KHIỂN)
-            ==================================================================== */}
+              1. VIEW HOME (TRANG CHỦ + PHÒNG ĐIỀU KHIỂN)
+              ==================================================================== */}
         {currentView === "home" && (
           <div>
             <section className="hero-section">
