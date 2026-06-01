@@ -2185,6 +2185,7 @@ function App() {
                           autoComplete="off"
                           placeholder="VD: Gia đình thân thương, Bố Mẹ và Tôm..."
                           value={createRoomName}
+                          name="room-name"
                           onChange={(e) => setCreateRoomName(e.target.value)}
                         />
                       </div>
@@ -2195,6 +2196,7 @@ function App() {
                           <input
                             type={showCreateRoomPass ? "text" : "password"}
                             autoComplete="off"
+                            name="room-password"
                             placeholder="Nhập mật khẩu tự chọn"
                             value={createRoomPass}
                             onChange={(e) => setCreateRoomPass(e.target.value)}
@@ -2299,6 +2301,8 @@ function App() {
                           type="text"
                           placeholder="VD: HN-8392"
                           value={joinRoomId}
+                          name="room-id"
+                          autoComplete="off"
                           onChange={(e) => {
                             let val = e.target.value;
                             // Tự động loại bỏ dấu cách cuối cùng nếu không có ký tự phía sau
@@ -2317,6 +2321,8 @@ function App() {
                             type={showJoinRoomPass ? "text" : "password"}
                             placeholder="Nhập mật khẩu phòng"
                             value={joinRoomPass}
+                            name="join-room-password"
+                            autoComplete="off"
                             onChange={(e) => setJoinRoomPass(e.target.value)}
                             style={{ paddingRight: "48px" }}
                           />
