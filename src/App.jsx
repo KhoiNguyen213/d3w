@@ -578,7 +578,7 @@ function App() {
       };
 
       ws.onmessage = (event) => {
-        console.log("WS ROOMS:", data.rooms);
+        console.log("WS DATA:", data);
         try {
           const data = JSON.parse(event.data);
           if (data.type === "rooms" && Array.isArray(data.rooms)) {
@@ -957,7 +957,7 @@ function App() {
   // ============================================================================
 
   // Cập nhật và lưu danh sách phòng đồng bộ lên MongoDB
-  const updateRoomsInAPI = (updatedRooms, modifiedRoomId = null) => {
+  const updateRoomsInAPI = async (updatedRooms, modifiedRoomId = null) => {
     setRooms(updatedRooms);
 
     let currentActive = null;
@@ -1105,7 +1105,7 @@ function App() {
           const fetched = await response.json();
           const fetchedRoom = fetched.success ? fetched.data : fetched;
           const updatedRooms = [...rooms, fetchedRoom];
-          await updateRoomsInAPI(updatedRooms);
+          await updateRoomsInAPI(updatedRooms, updatedRoom.id);
           setRooms(updatedRooms);
           currentRooms = updatedRooms;
           foundRoomIndex = updatedRooms.findIndex(
@@ -1145,7 +1145,7 @@ function App() {
         },
       ];
     }
-    const updatedRooms = [...rooms];
+    const updatedRooms = [...currentRooms];
     updatedRooms[foundRoomIndex] = updatedRoom;
     await updateRoomsInAPI(updatedRooms);
     // Store joiner info
@@ -2322,7 +2322,7 @@ function App() {
                             placeholder="Nhập mật khẩu phòng"
                             value={joinRoomPass}
                             name="room-password"
-                            autoComplete="off"
+                            autoComplete="new-password"
                             onChange={(e) => setJoinRoomPass(e.target.value)}
                             style={{ paddingRight: "48px" }}
                           />
