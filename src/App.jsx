@@ -522,6 +522,7 @@ function App() {
 
   // Đọc danh sách phòng từ MongoDB
   const loadRoomsFromAPI = async () => {
+    console.log("REST ROOMS:", data.data);
     try {
       const res = await fetch(`${API_URL}/api/rooms`);
       if (!res.ok) return;
@@ -577,6 +578,7 @@ function App() {
       };
 
       ws.onmessage = (event) => {
+        console.log("WS ROOMS:", data.rooms);
         try {
           const data = JSON.parse(event.data);
           if (data.type === "rooms" && Array.isArray(data.rooms)) {
