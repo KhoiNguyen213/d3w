@@ -578,15 +578,19 @@ function App() {
       };
 
       ws.onmessage = (event) => {
-        console.log("WS DATA:", data);
         try {
           const data = JSON.parse(event.data);
+
+          console.log("WS DATA:", data);
+
           if (data.type === "rooms" && Array.isArray(data.rooms)) {
             setRooms(data.rooms);
-            // Đồng bộ phòng đang hoạt động
+
             const activeRoomId = localStorage.getItem("HN_active_room_id");
+
             if (activeRoomId) {
               const found = data.rooms.find((r) => r.id === activeRoomId);
+
               if (found) {
                 setActiveRoom(found);
               }
