@@ -2182,6 +2182,7 @@ function App() {
                         <label>Tên Phòng Kết Nối</label>
                         <input
                           type="text"
+                          autoComplete="off"
                           placeholder="VD: Gia đình thân thương, Bố Mẹ và Tôm..."
                           value={createRoomName}
                           onChange={(e) => setCreateRoomName(e.target.value)}
@@ -2193,6 +2194,7 @@ function App() {
                         <div style={{ position: "relative" }}>
                           <input
                             type={showCreateRoomPass ? "text" : "password"}
+                            autoComplete="off"
                             placeholder="Nhập mật khẩu tự chọn"
                             value={createRoomPass}
                             onChange={(e) => setCreateRoomPass(e.target.value)}
@@ -2230,6 +2232,7 @@ function App() {
                         <label>Tên Hiển Thị Của Bạn</label>
                         <input
                           type="text"
+                          autoComplete="off"
                           placeholder={
                             currentUser
                               ? `Mặc định: ${currentUser.name}`
