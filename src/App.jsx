@@ -1111,6 +1111,7 @@ function App() {
       setIsRoomLoading(false);
       return;
     }
+    console.log("ROOMS ARRAY:", rooms);
     // Find room index locally
     let foundRoomIndex = rooms.findIndex(
       (r) => r.id.toUpperCase() === joinRoomId.toUpperCase(),
