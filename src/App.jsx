@@ -2235,11 +2235,11 @@ function App() {
                         <input
                           type="text"
                           autoComplete="off"
-                          placeholder={
-                            currentUser
-                              ? `Mặc định: ${currentUser.name}`
-                              : "VD: Bố Tuấn, Mẹ Hà, Con gái Linh..."
-                          }
+                          // placeholder={
+                          //   currentUser
+                          //     ? `Mặc định: ${currentUser.name}`
+                          //     : "VD: Bố Tuấn, Mẹ Hà, Con gái Linh..."
+                          // }
                           value={createCreatorName}
                           onChange={(e) => setCreateCreatorName(e.target.value)}
                         />
@@ -2321,7 +2321,7 @@ function App() {
                             type={showJoinRoomPass ? "text" : "password"}
                             placeholder="Nhập mật khẩu phòng"
                             value={joinRoomPass}
-                            name="join-room-password"
+                            name="room-password"
                             autoComplete="off"
                             onChange={(e) => setJoinRoomPass(e.target.value)}
                             style={{ paddingRight: "48px" }}
