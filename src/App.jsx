@@ -992,11 +992,11 @@ function App() {
     e.preventDefault();
     setRoomError("");
     // UI Loading overlay
-    const LoadingOverlay = () => (
-      <div className="loading-overlay">
-        <div className="spinner"></div>
-      </div>
-    );
+    // const LoadingOverlay = () => (
+    //   <div className="loading-overlay">
+    //     <div className="spinner"></div>
+    //   </div>
+    // );
     // Loading indicator start
     setIsRoomLoading(true);
     // 1. Yêu cầu đăng nhập để tạo phòng
@@ -5263,7 +5263,7 @@ function App() {
           </p>
         </div>
       </footer>
-      {isRoomLoading && <LoadingOverlay />}
+      {/* {isRoomLoading && <LoadingOverlay />} */}
       {/* POPUP THÔNG BÁO THÔNG MINH (GLASSMORPHIC DIALOG MODAL) */}
       {showAuthAlertModal && (
         <div
