@@ -29,7 +29,8 @@ const broadcastRooms = async () => {
     const rooms = await Room.find({});
     const message = JSON.stringify({ type: "rooms", rooms });
     wss.clients.forEach((client) => {
-      if (client.readyState === 1) { // WebSocket.OPEN
+      if (client.readyState === 1) {
+        // WebSocket.OPEN
         client.send(message);
       }
     });
@@ -136,7 +137,12 @@ app.get("/api/rooms", async (req, res) => {
 // 2. Tạo hoặc ghi đè toàn bộ một phòng (Dùng chung cho tạo và join để đơn giản hóa theo logic Frontend hiện tại)
 app.post("/api/rooms", async (req, res) => {
   try {
-    console.log("ROOM DATA:");
+    console.log("========== SAVE ROOM ==========");
+    console.log("ROOM:", req.body.id);
+    console.log(
+      "MEMBERS:",
+      req.body.members?.map((m) => m.name),
+    );
     console.log(JSON.stringify(req.body, null, 2));
 
     const roomData = req.body;
@@ -152,7 +158,7 @@ app.post("/api/rooms", async (req, res) => {
         new: true,
         upsert: true,
         runValidators: true,
-      }
+      },
     );
 
     res.status(201).json({
@@ -190,18 +196,20 @@ app.get("/api/rooms/:id", async (req, res) => {
 app.put("/api/rooms/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body; 
-    
+    const updateData = req.body;
+
     const room = await Room.findOneAndUpdate(
       { id },
       { $set: updateData },
-      { new: true }
+      { new: true },
     );
-    
+
     if (!room) {
-      return res.status(404).json({ error: "Không tìm thấy phòng để cập nhật" });
+      return res
+        .status(404)
+        .json({ error: "Không tìm thấy phòng để cập nhật" });
     }
-    
+
     res.json({ success: true, data: room });
     // Broadcast cập nhật phòng tới tất cả client qua WebSocket
     broadcastRooms();
@@ -384,7 +392,7 @@ app.put("/api/auth/profile", async (req, res) => {
         birthday: user.birthday,
         emotionLogs: user.emotionLogs,
         challengeProgress: user.challengeProgress,
-        savedConclusions: user.savedConclusions
+        savedConclusions: user.savedConclusions,
       },
     });
   } catch (error) {
@@ -408,8 +416,10 @@ app.put("/api/auth/sync", async (req, res) => {
     }
 
     if (emotionLogs !== undefined) user.emotionLogs = emotionLogs;
-    if (challengeProgress !== undefined) user.challengeProgress = challengeProgress;
-    if (savedConclusions !== undefined) user.savedConclusions = savedConclusions;
+    if (challengeProgress !== undefined)
+      user.challengeProgress = challengeProgress;
+    if (savedConclusions !== undefined)
+      user.savedConclusions = savedConclusions;
 
     await user.save();
 

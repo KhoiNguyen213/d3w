@@ -594,7 +594,10 @@ function App() {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-
+          console.log(
+            "WS MEMBERS:",
+            data.rooms?.find((r) => r.id === activeRoom?.id)?.members,
+          );
           console.log("WS DATA:", data);
 
           if (data.type === "rooms" && Array.isArray(data.rooms)) {
@@ -997,6 +1000,8 @@ function App() {
     const roomToSync = updatedRooms.find((r) => r.id === roomToSyncId);
 
     if (roomToSync) {
+      console.log("SYNC ROOM:", roomToSync?.id);
+      console.log("SYNC MEMBERS:", roomToSync?.members);
       fetch(`${API_URL}/api/rooms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1128,6 +1133,10 @@ function App() {
           const fetched = await response.json();
           const fetchedRoom = fetched.success ? fetched.data : fetched;
           const updatedRooms = [...rooms, fetchedRoom];
+
+          console.log("JOIN - SAVING ROOM:");
+          console.log(JSON.stringify(updatedRoom, null, 2));
+
           await updateRoomsInAPI(updatedRooms, updatedRoom.id);
           setRooms(updatedRooms);
           currentRooms = updatedRooms;
@@ -1170,7 +1179,7 @@ function App() {
     }
     const updatedRooms = [...currentRooms];
     updatedRooms[foundRoomIndex] = updatedRoom;
-    await updateRoomsInAPI(updatedRooms);
+    await updateRoomsInAPI(updatedRooms, updatedRoom.id);
     // Store joiner info
     sessionStorage.setItem(`HN_room_username_${room.id}`, joinUserName);
     sessionStorage.setItem(`HN_room_role_${room.id}`, joinUserRole);
