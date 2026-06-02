@@ -4672,7 +4672,15 @@ function App() {
                   const myMember = activeRoom.members.find(
                     (m) => m.name === myName,
                   );
-                  const answers = myMember ? myMember.answers : {};
+
+                  console.log("ACTIVE ROOM:", activeRoom);
+                  console.log("MEMBERS:", activeRoom?.members);
+                  console.log("MY NAME:", myName);
+                  console.log("MY MEMBER:", myMember);
+                  console.log("MY ANSWERS:", myMember?.answers);
+
+                  const answers = myMember?.answers || {};
+
                   const myAnswersCount = Object.keys(answers).length;
                   const totalQuestions = activeRoom.compiledQuestions.length;
 
@@ -4786,6 +4794,10 @@ function App() {
                   }
 
                   // TRẠNG THÁI TRẢ LỜI CÂU HỎI TỪNG CÂU
+                  console.log(
+                    "COMPILED QUESTIONS:",
+                    activeRoom.compiledQuestions,
+                  );
                   const activeQ =
                     activeRoom.compiledQuestions[currentQuestionIndex];
                   const qCreatorText =
@@ -4889,7 +4901,7 @@ function App() {
                                 (m) => m.name === myName,
                               );
                               const existingAnswer =
-                                myMember?.answers[currentQuestionIndex - 1];
+                                myMember?.answers?.[currentQuestionIndex - 1];
                               setTempAnswerText(
                                 existingAnswer ? existingAnswer.text : "",
                               );
