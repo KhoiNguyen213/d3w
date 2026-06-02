@@ -594,6 +594,12 @@ function App() {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log("ACTIVE ROOM:", activeRoom?.id);
+
+          console.log(
+            "WS ROOM IDS:",
+            data.rooms?.map((r) => r.id),
+          );
           console.log(
             "WS MEMBERS:",
             data.rooms?.find((r) => r.id === activeRoom?.id)?.members,
@@ -982,8 +988,10 @@ function App() {
     setRooms(updatedRooms);
 
     let currentActive = null;
+
     if (activeRoom) {
       currentActive = updatedRooms.find((r) => r.id === activeRoom.id);
+
       if (currentActive) {
         setActiveRoom(currentActive);
       } else {
@@ -994,10 +1002,11 @@ function App() {
 
     const roomToSyncId =
       modifiedRoomId ||
-      (currentActive
-        ? currentActive.id
-        : updatedRooms[updatedRooms.length - 1]?.id);
+      currentActive?.id ||
+      updatedRooms[updatedRooms.length - 1]?.id;
+
     const roomToSync = updatedRooms.find((r) => r.id === roomToSyncId);
+
     console.log("========== SYNC ==========");
     console.log("ROOM ID:", roomToSync?.id);
     console.log(
@@ -1006,14 +1015,25 @@ function App() {
     );
     console.log(JSON.stringify(roomToSync, null, 2));
 
-    if (roomToSync) {
-      console.log("SYNC ROOM:", roomToSync?.id);
-      console.log("SYNC MEMBERS:", roomToSync?.members);
-      fetch(`${API_URL}/api/rooms`, {
+    if (!roomToSync) {
+      console.warn("Không tìm thấy room để sync");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/rooms`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(roomToSync),
-      }).catch((err) => console.error("Lỗi lưu phòng:", err));
+      });
+
+      const result = await response.json();
+
+      console.log("SYNC RESULT:", result);
+    } catch (err) {
+      console.error("Lỗi lưu phòng:", err);
     }
   };
 
