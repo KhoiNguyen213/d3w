@@ -4672,7 +4672,7 @@ function App() {
                   const myMember = activeRoom.members.find(
                     (m) => m.name === myName,
                   );
-
+                  // sdansdjnaadafadfsdfs
                   console.log("ACTIVE ROOM:", activeRoom);
                   console.log("MEMBERS:", activeRoom?.members);
                   console.log("MY NAME:", myName);
