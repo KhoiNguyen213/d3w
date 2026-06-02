@@ -998,6 +998,13 @@ function App() {
         ? currentActive.id
         : updatedRooms[updatedRooms.length - 1]?.id);
     const roomToSync = updatedRooms.find((r) => r.id === roomToSyncId);
+    console.log("========== SYNC ==========");
+    console.log("ROOM ID:", roomToSync?.id);
+    console.log(
+      "MEMBERS:",
+      roomToSync?.members?.map((m) => m.name),
+    );
+    console.log(JSON.stringify(roomToSync, null, 2));
 
     if (roomToSync) {
       console.log("SYNC ROOM:", roomToSync?.id);
@@ -1122,6 +1129,10 @@ function App() {
     console.log("ROOMS:", rooms);
     console.log("FIRST ROOM:", rooms[0]);
 
+    console.log(
+      "ROOM IDS:",
+      rooms.map((r) => r.id),
+    );
     let foundRoomIndex = rooms.findIndex(
       (r) => r.id.toUpperCase() === joinRoomId.toUpperCase(),
     );
