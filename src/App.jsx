@@ -1113,6 +1113,10 @@ function App() {
     }
     console.log("ROOMS ARRAY:", rooms);
     // Find room index locally
+    console.log("JOIN ROOM ID:", joinRoomId);
+    console.log("ROOMS:", rooms);
+    console.log("FIRST ROOM:", rooms[0]);
+
     let foundRoomIndex = rooms.findIndex(
       (r) => r.id.toUpperCase() === joinRoomId.toUpperCase(),
     );
