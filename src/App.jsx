@@ -537,6 +537,28 @@ function App() {
       if (data.success) {
         const parsedRooms = data.data || [];
 
+        if (data.success) {
+          const parsedRooms = data.data || [];
+
+          setRooms(parsedRooms);
+
+          // Đồng bộ phòng hiện tại nếu đang trong phòng
+          const activeRoomId = localStorage.getItem("HN_active_room_id");
+
+          if (activeRoomId) {
+            const found = parsedRooms.find(
+              (r) =>
+                r.id === activeRoomId ||
+                r._id === activeRoomId ||
+                r.roomId === activeRoomId,
+            );
+
+            if (found) {
+              setActiveRoom(found);
+            }
+          }
+        }
+
         setRooms(parsedRooms);
 
         // Đồng bộ phòng hiện tại nếu đang trong phòng
@@ -594,6 +616,9 @@ function App() {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log("WS ROOM COUNT:", data.rooms?.length);
+
+          console.log("ACTIVE ROOM KHI NHẬN WS:", activeRoom?.id);
           console.log("ACTIVE ROOM:", activeRoom?.id);
 
           console.log(
@@ -985,6 +1010,12 @@ function App() {
 
   // Cập nhật và lưu danh sách phòng đồng bộ lên MongoDB
   const updateRoomsInAPI = async (updatedRooms, modifiedRoomId = null) => {
+    console.log("===== UPDATE ROOMS START =====");
+    console.log("ACTIVE ROOM:", activeRoom?.id);
+    console.log(
+      "UPDATED ROOM IDS:",
+      updatedRooms.map((r) => r.id),
+    );
     setRooms(updatedRooms);
 
     let currentActive = null;
@@ -993,10 +1024,16 @@ function App() {
       currentActive = updatedRooms.find((r) => r.id === activeRoom.id);
 
       if (currentActive) {
+        console.log("ACTIVE ROOM VẪN TỒN TẠI:", currentActive.id);
+
         setActiveRoom(currentActive);
       } else {
-        setActiveRoom(null);
-        localStorage.removeItem("HN_active_room_id");
+        console.error("ACTIVE ROOM BỊ MẤT:", activeRoom.id);
+
+        console.log(
+          "UPDATED ROOM IDS:",
+          updatedRooms.map((r) => r.id),
+        );
       }
     }
 
@@ -1179,8 +1216,14 @@ function App() {
         console.error(e);
       }
       if (foundRoomIndex === -1) {
-        setRoomError("⚠️ Không tìm thấy phòng kiểm tra này.");
-        setIsRoomLoading(false);
+        console.error("KHÔNG TÌM THẤY PHÒNG:", joinRoomId);
+
+        console.log(
+          "ROOM IDS HIỆN TẠI:",
+          currentRooms.map((r) => r.id),
+        );
+
+        setRoomError("⚠️ Không tìm thấy phòng.");
         return;
       }
     }
