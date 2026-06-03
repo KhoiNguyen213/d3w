@@ -327,6 +327,7 @@ function App() {
         };
 
         try {
+          console.log("CALLING AI API");
           const response = await fetch(`${API_URL}/api/analyze-understanding`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -339,9 +340,10 @@ function App() {
             }),
           });
           const data = await response.json();
+          console.log("AI RESPONSE:", data);
           setActiveReviewAdvice(data.adviceHTML);
         } catch (e) {
-          console.error(e);
+          console.error("AI FETCH ERROR:", e);
           setActiveReviewAdvice({
             success: false,
             similarity:

@@ -86,6 +86,8 @@ server.listen(PORT, "0.0.0.0", () => {
 
 // Endpoint phân tích từng câu hỏi (Sinh lời khuyên AI)
 app.post("/api/analyze-understanding", async (req, res) => {
+  console.log("AI REQUEST RECEIVED");
+  console.log(req.body);
   const { question, parentAns, parentEmo, childAns, childEmo } = req.body;
 
   if (!question || !parentAns || !childAns) {

@@ -3,6 +3,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 
 dotenv.config();
+console.log(
+  "GEMINI KEY:",
+  process.env.GEMINI_API_KEY
+    ? process.env.GEMINI_API_KEY.slice(0, 10)
+    : "UNDEFINED",
+);
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -238,7 +244,8 @@ Chỉ trả JSON.
       action: parsed.action,
     };
   } catch (err) {
-    console.log("Gemini error:", err.message);
+    console.error("GEMINI ERROR FULL:");
+    console.error(err);
 
     // fallback thông minh
 
