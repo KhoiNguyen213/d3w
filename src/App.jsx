@@ -327,7 +327,6 @@ function App() {
         };
 
         try {
-          // sđs
           console.log("CALLING AI API");
           const response = await fetch(`${API_URL}/api/analyze-understanding`, {
             method: "POST",
