@@ -341,7 +341,8 @@ function App() {
             }),
           });
           const data = await response.json();
-          console.log("AI RESPONSE:", data);
+          console.log("AI RESPONSE RAW:");
+          console.log(JSON.stringify(data, null, 2));
           setActiveReviewAdvice(data.adviceHTML);
         } catch (e) {
           console.error("AI FETCH ERROR:", e);
